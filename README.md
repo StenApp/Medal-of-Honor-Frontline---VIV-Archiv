@@ -7,6 +7,8 @@ shell.viv is BIGF format use https://github.com/Aleksei-Miller/vivtool
 
 -mus +mpf  -->music file, mus can be renamed in asf and be played
 
+MUS has SCH/SCD/SCE entries
+
 -abk+ast  -->sound banks and a streamed audio file ast, abk can contain references to ast or standalone audio files
 
 -mpc -->video file
