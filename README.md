@@ -11,4 +11,4 @@ shell.viv is BIGF format use https://github.com/Aleksei-Miller/vivtool
 
 -mpc -->video file
 
--ssh -->pictures (use [EA Graphics Manager](https://github.com/bartlomiejduda/EA-Graphics-Manager))
+-ssh PS2, xsh XBOX -->pictures (use [EA Graphics Manager](https://github.com/bartlomiejduda/EA-Graphics-Manager))
