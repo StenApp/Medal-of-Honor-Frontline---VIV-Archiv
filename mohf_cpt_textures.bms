@@ -1,0 +1,119 @@
+# Medal of Honor: Frontline - CPT Texture Extractor
+# Extracts embedded XSH textures from .cpt (Compiled Polytope/Art) files
+# Format reverse engineered by h3x3r on ReSHAX (Jan 2026)
+# https://reshax.com/topic/18753-ps2-medal-of-honor-frontline/
+#
+# Usage: quickbms mohf_cpt_textures.bms file.cpt output_folder
+#
+# CPT contains two MaterialSets (MaterialSet0, MaterialSet1)
+# Each MaterialSet entry references an embedded XSH texture block (SHPX magic)
+# Output: MaterialSet0/0000.xsh, MaterialSet0/0001.xsh, ...
+#         MaterialSet1/0000.xsh, MaterialSet1/0001.xsh, ...
+
+endian little
+get BaseFileName basename
+
+# --- CPT Header ---
+get Sign            uint32      # 0x00: e.g. 0x12 = 18
+get ResourceSize    uint32      # 0x04: file size
+get Unknown_0       uint32      # 0x08
+get MatSet0_Offset  uint32      # 0x0C: MaterialSet0 table offset
+get MatSet0_Index   uint32      # 0x10: number of entries in MaterialSet0
+get MatSet1_Offset  uint32      # 0x14: MaterialSet1 table offset
+get MatSet1_Index   uint32      # 0x18: number of entries in MaterialSet1
+# (remaining header fields skipped)
+
+# --- MaterialSet0 ---
+goto MatSet0_Offset
+
+for i = 0 < MatSet0_Index
+    getdstring Dummy            0x14    # Null[5] = 20 bytes
+    get Unknown_0               uint32
+    get Unknown_1               uint32
+    get Unknown_2               uint32
+    get RawDataOffset           uint32
+    get PaletteDataOffset       uint32
+    get Unknown_3               uint32
+    get Unknown_4               uint32
+    get Unknown_5               uint32
+    get Unknown_6               ubyte
+    get Unknown_7               ubyte
+    get Unknown_8               ubyte   # PixelFormat
+    get Unknown_9               ubyte
+    get Unknown_10              uint32
+    get Unknown_11              uint32
+    get Unknown_12              uint32
+    get Unknown_13              uint32
+    get Unknown_14              uint32
+    get Unknown_15              uint32
+    get Unknown_16              uint32
+    get Unknown_17              uint32
+    get Unknown_18              uint32
+    get Unknown_19              uint32
+    get Unknown_20              uint32
+    get TextureWidth            uint32
+    get TextureHeight           uint32
+    get Unknown_21              uint32
+    get HeaderOffset            uint32  # Offset to SHPX block
+    get Unknown_22              uint32
+    get Unknown_23              uint32
+    get ExternalTextureId       uint32
+    savepos cPos
+
+    # Read SHPX block size from HeaderOffset+4
+    goto HeaderOffset
+    getdstring Magic4           0x4     # "SHPX"
+    get ResourceSize            uint32  # block size incl. header
+
+    string Name p "%s/MaterialSet0/%04u.xsh" BaseFileName i
+    log Name HeaderOffset ResourceSize
+
+    goto cPos
+next i
+
+# --- MaterialSet1 ---
+goto MatSet1_Offset
+
+for i = 0 < MatSet1_Index
+    getdstring Dummy            0x14
+    get Unknown_0               uint32
+    get Unknown_1               uint32
+    get Unknown_2               uint32
+    get RawDataOffset           uint32
+    get PaletteDataOffset       uint32
+    get Unknown_3               uint32
+    get Unknown_4               uint32
+    get Unknown_5               uint32
+    get Unknown_6               ubyte
+    get Unknown_7               ubyte
+    get Unknown_8               ubyte
+    get Unknown_9               ubyte
+    get Unknown_10              uint32
+    get Unknown_11              uint32
+    get Unknown_12              uint32
+    get Unknown_13              uint32
+    get Unknown_14              uint32
+    get Unknown_15              uint32
+    get Unknown_16              uint32
+    get Unknown_17              uint32
+    get Unknown_18              uint32
+    get Unknown_19              uint32
+    get Unknown_20              uint32
+    get TextureWidth            uint32
+    get TextureHeight           uint32
+    get Unknown_21              uint32
+    get HeaderOffset            uint32
+    get Unknown_22              uint32
+    get Unknown_23              uint32
+    get ExternalTextureId       uint32
+    savepos cPos
+
+    goto HeaderOffset
+    getdstring Magic4           0x4
+    get ResourceSize            uint32
+
+    string Name p "%s/MaterialSet1/%04u.xsh" BaseFileName i
+    log Name HeaderOffset ResourceSize
+
+    goto cPos
+next i

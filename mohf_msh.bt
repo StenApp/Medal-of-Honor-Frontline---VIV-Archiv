@@ -1,0 +1,145 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_msh.bt
+//   Authors: h3x3r (ReSHAX), adapted by Sten
+//   Version: 0.1.0
+//   Purpose: Medal of Honor Frontline - MSH Mesh Format
+//  Category: Game
+// File Mask: *.msh;*.mpk
+//  ID Bytes:
+//   History: 2026-01 h3x3r reverse engineered Xbox/PS2 MSH on ReSHAX
+//            https://reshax.com/topic/18753-ps2-medal-of-honor-frontline/
+//
+// Notes:
+//   - Little Endian throughout
+//   - Vertex stride = 28 bytes: [XYZ float3][Unknown 8B][UV float2]
+//   - Index buffer = uint16 Triangle Strip (0xFFFF = strip restart)
+//   - Textures embedded: SHPX block (Xbox) after mesh data, or palette in MaterialTable (PS2)
+//   - MPK files use the same structure but may contain multiple meshes+textures
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+local uint32 i;
+
+// ── Main Header (48 bytes) ────────────────────────────────────────────
+uint32 Sign;                    // 0x00: e.g. 0x0000000B
+uint32 ResourceSize;            // 0x04: total file size
+uint32 MaterialTableOffset;     // 0x08
+uint32 MaterialIndex;           // 0x0C: number of materials
+uint32 Unknown_2_Offset;        // 0x10
+uint32 Unknown_2_Index;         // 0x14
+uint32 MeshTableOffset;         // 0x18
+uint32 MeshIndex;               // 0x1C: number of mesh entries
+uint32 Unknown_3_Offset;        // 0x20
+uint32 Unknown_3_Index;         // 0x24
+uint32 TransformOffset;         // 0x28
+uint32 TransformIndex;          // 0x2C
+
+// ── Material Table ────────────────────────────────────────────────────
+// Each entry = 128 bytes
+FSeek(MaterialTableOffset);
+typedef struct {
+    uint32 Null[5];             // 0x00
+    uint32 Unknown_0;           // 0x14
+    uint32 Unknown_1;           // 0x18
+    uint32 Unknown_2;           // 0x1C
+    uint32 RawDataOffset;       // 0x20: offset to raw pixel data
+    uint32 PaletteDataOffset;   // 0x24: offset to palette data
+    uint32 Unknown_3;           // 0x28
+    uint32 Unknown_4;           // 0x2C
+    uint32 Unknown_5;           // 0x30
+    ubyte  PixelFormat;         // 0x34: texture pixel format (see below)
+    ubyte  Unknown_7;           // 0x35
+    ubyte  Unknown_8;           // 0x36
+    ubyte  Unknown_9;           // 0x37
+    uint32 Unknown_10;          // 0x38
+    uint32 Unknown_11;          // 0x3C
+    uint32 Unknown_12;          // 0x40
+    uint32 Unknown_13;          // 0x44
+    uint32 Unknown_14;          // 0x48
+    uint32 Unknown_15;          // 0x4C
+    uint32 Unknown_16;          // 0x50
+    uint32 Unknown_17;          // 0x54
+    uint32 Unknown_18;          // 0x58
+    uint32 Unknown_19;          // 0x5C
+    uint32 Unknown_20;          // 0x60 (NOTE: some builds shift by 4)
+    uint32 TextureWidth;        // 0x60 or 0x64
+    uint32 TextureHeight;       // 0x64 or 0x68
+    uint32 Unknown_21;          // 0x68
+    uint32 HeaderOffset;        // 0x6C: offset to SHPX header block
+    uint32 Unknown_22;          // 0x70
+    uint32 Unknown_23;          // 0x74
+    uint32 Unknown_24;          // 0x78
+    uint32 ExternalTextureId;   // 0x7C: 0 = internal, non-zero = external ref
+    // PixelFormat values:
+    //   96  = DXT1 (no alpha)
+    //   97  = DXT3 (with alpha)
+    //   123 = Palettised 8bpp, Morton order, BGRA8888 palette
+    //   125 = BGRA8888 raw (MortonFlag in SHPX header)
+} MaterialEntry <size=128>;
+
+MaterialEntry MaterialTable[MaterialIndex] <optimize=false>;
+
+
+// ── Mesh Table ────────────────────────────────────────────────────────
+// Each entry = 32 bytes
+FSeek(MeshTableOffset);
+typedef struct {
+    uint32 Unknown_0;           // 0x00
+    uint32 MaterialOffset;      // 0x04: offset to material entry for this mesh
+    uint32 MeshOffset;          // 0x08: offset to Mesh block
+    uint32 Unknown_1;           // 0x0C
+    uint32 Null[4];             // 0x10
+
+    local uint32 cPos = FTell();
+
+    FSeek(MeshOffset);
+    struct MeshBlock {
+        uint32 Null[3];                 // 0x00
+        uint32 VertexBufferOffset;      // 0x0C
+        uint32 IndexBufferOffset;       // 0x10
+        uint16 VertexCount;             // 0x14
+        uint16 IndexCount;              // 0x16
+
+        FSeek(VertexBufferOffset);
+        typedef struct {
+            float  VPosX;               // X position
+            float  VPosY;               // Y position
+            float  VPosZ;               // Z position
+            uint32 Unknown_0;           // unknown (possibly packed normal)
+            uint32 Unknown_1;           // unknown
+            float  UVPosX;              // U texture coordinate
+            float  UVPosY;              // V texture coordinate (flip for export)
+        } Vertex <size=28>;
+        Vertex VertexBuffer[VertexCount] <optimize=true>;
+
+        FSeek(IndexBufferOffset);
+        // Triangle Strip - 0xFFFF = strip restart marker
+        uint16 IndexBuffer[IndexCount];
+    } Mesh;
+
+    FSeek(cPos);
+} MeshTableEntry <size=32>;
+
+MeshTableEntry MeshTable[MeshIndex] <optimize=false>;
+
+
+// ── SHPX Texture Block (Xbox embedded texture) ───────────────────────
+// Located after mesh data; one per material (typically)
+// Also appears standalone in .xsh files
+//
+// SHPX Header (128 bytes):
+//   +0x00: Magic "SHPX"
+//   +0x04: BlockSize (uint32 LE) - total size incl. header
+//   +0x08: Unknown (uint32) - usually 1
+//   +0x0C: Name (null-terminated ASCII)
+//   +0x70: PixelFormat (ubyte)
+//   +0x71: Unknown (3 bytes)
+//   +0x74: TextureWidth (uint16)
+//   +0x76: TextureHeight (uint16)
+//   +0x78: Unknown (4 bytes)
+//   +0x7C: MortonFlag (uint32) - non-zero = tiles in Morton/Z-order
+//   +0x80: pixel data starts here
