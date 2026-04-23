@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-MOH Frontline PS2 VIV Extraktor - GUI
+MOH Frontline PS2/Xbox VIV Extraktor - GUI
 Unterstuetzt:
-  - C0 FB xx xx (MOH custom format)
+  - C0 FB xx xx (MOH custom format, PS2 und Xbox)
   - BIGF / BIG4 (Standard EA)
 
 Benoetigt: Python 3.6+, tkinter (Standard)
@@ -28,15 +28,23 @@ def fmt_size(n):
     return f"{n} B"
 
 def parse_viv_c0fb(data):
-    """C0 FB custom format: [4B magic][2B num_files BE][2B unk]
+    """C0 FB custom format.
 
-    Pro Eintrag normalerweise: [3B offset BE][3B size BE][name\0]
-    Sonderfall: wenn data[pos+3..pos+5] alle printable ASCII sind,
-    beginnt der Name bereits bei pos+4 ([3B offset][1B flags][name\0]);
-    size wird dann implizit als (naechster_offset - dieser_offset) berechnet.
+    PS2-Layout:  [2B magic][2B num_files BE][2B unk BE][...]
+    Xbox-Layout: [2B magic][2B unk BE][2B num_files BE][...]
+
+    Erkennungsheuristik: Xbox hat auf Bytes 4:6 einen Wert > 0x00FF
+    (z.B. 0x011A = Header-Groesse). PS2 hat dort direkt num_files (<= ~100).
+
+    Pro Eintrag: [3B offset BE][3B size BE][name\0]
+    Erster Eintrag: [1B alignment][3B size][name\0]  (kein expliziter Offset)
     """
-    num_files = struct.unpack('>H', data[4:6])[0]
-    unk       = struct.unpack('>H', data[6:8])[0]
+    w0 = struct.unpack('>H', data[4:6])[0]
+    w1 = struct.unpack('>H', data[6:8])[0]
+    if w0 > 0x00FF:
+        num_files, unk = w1, w0
+    else:
+        num_files, unk = w0, w1
     meta = {
         'format':    'MOH C0FB',
         'magic':     data[0:4].hex().upper(),
@@ -54,20 +62,17 @@ def parse_viv_c0fb(data):
 
     raw = []
     pos = 8
-    header_end = pos  # wird waehrend Parse aktualisiert
     for i in range(num_files):
         if pos + 7 > len(data):
             raise ValueError(f"Header-EOF bei Eintrag {i} (pos={pos})")
         if i == 0:
             # Erster Eintrag: [1B alignment][3B size][name\0]
-            # Der 1B-Wert ist die Alignment-Einheit. Der echte Offset
-            # wird nach dem Parsen aller Eintraege berechnet:
-            # offset = ceil(header_end / alignment) * alignment
+            # alignment-Byte=0x00 bedeutet alignment=0x100.
             alignment = data[pos]
             size_raw  = read_u24be(data, pos + 1)
             ns        = pos + 4
         else:
-            # Normalformat: [3B offset][3B size][name\0]
+            # Alle weiteren Eintraege: [3B offset][3B size][name\0]
             alignment = None
             size_raw  = read_u24be(data, pos + 3)
             ns        = pos + 6
@@ -76,16 +81,23 @@ def parse_viv_c0fb(data):
         except ValueError:
             raise ValueError(f"Kein Null-Terminator bei Eintrag {i}")
         name = data[ns:name_end].decode('ascii', errors='replace')
-        offset = read_u24be(data, pos) if i > 0 else alignment
+        offset = read_u24be(data, pos)
         raw.append({'name': name, 'offset': offset, 'size_raw': size_raw,
-                    'alignment': alignment})
+                    'alignment': alignment if i == 0 else None})
         pos = name_end + 1
 
-    # Echten Offset fuer Eintrag 0 berechnen
+    # Echten Offset fuer Eintrag 0 berechnen (nur wenn alignment-Byte gesetzt war).
+    # data[2:4] ist die vorberechnete Header-Endposition (vom Spielpacker eingetragen).
+    # Das alignment-Byte gibt die Ausrichtungseinheit vor:
+    #   0x40 → align 64  (PS2-Dateien mit kleinem abyte)
+    #   0x80 → align 128 (Xbox-Dateien und groessere PS2-Dateien)
+    #   sonst → Fallback auf 0x40 (z.B. abyte=0xC0)
     if raw and raw[0]['alignment'] is not None:
-        align = raw[0]['alignment']
-        true_off = math.ceil(pos / align) * align
-        raw[0]['offset'] = true_off
+        abyte       = raw[0]['alignment']
+        align       = {0x00: 0x100, 0x40: 0x40, 0x80: 0x80}.get(abyte, 0x40)
+        header_size = struct.unpack('>H', data[2:4])[0]
+        base        = header_size if header_size > pos - align else pos
+        raw[0]['offset'] = math.ceil(base / align) * align
 
     # Zweiter Pass: Status setzen
     is_blog = (unk == 0x0000)
@@ -337,6 +349,9 @@ class VivExtractorApp(tk.Tk):
 
         self._viv_data  = data
         self._viv_path  = path
+        # _idx als stabiler eindeutiger Schluessel fuer Treeview-iid
+        for i, e in enumerate(entries):
+            e['_idx'] = i
         self._all_entries = entries
         self._meta       = meta
 
@@ -396,7 +411,7 @@ class VivExtractorApp(tk.Tk):
         for item in self._tree.get_children():
             self._tree.delete(item)
 
-        for e in filtered:
+        for idx, e in enumerate(filtered):
             ext_tag = os.path.splitext(e['name'])[1].lstrip('.').lower()
             if e.get('extern'):
                 tag    = 'extern'
@@ -408,7 +423,7 @@ class VivExtractorApp(tk.Tk):
                 tag    = f'ext_{ext_tag}' if ext_tag in self.EXT_COLORS else ''
                 status = '✓'
             self._tree.insert('', 'end',
-                iid=e['name'],
+                iid=str(e['_idx']),
                 values=(
                     e['name'],
                     ext_tag.upper() if ext_tag else '—',
@@ -436,10 +451,9 @@ class VivExtractorApp(tk.Tk):
     def _update_status(self, visible=None):
         if visible is None:
             visible = len(self._tree.get_children())
-        sel = self._tree.selection()
-        # Gesamtgröße der Auswahl
-        entry_map = {e['name']: e for e in self._all_entries}
-        sel_size  = sum(entry_map[n]['size'] for n in sel if n in entry_map)
+        sel = self._tree.selection()  # iids = str(_idx)
+        idx_map = {str(e['_idx']): e for e in self._all_entries}
+        sel_size = sum(idx_map[iid]['size'] for iid in sel if iid in idx_map)
         msg = f"{visible} Einträge sichtbar"
         if sel:
             msg += f"  │  {len(sel)} ausgewählt ({fmt_size(sel_size)})"
@@ -458,8 +472,8 @@ class VivExtractorApp(tk.Tk):
             return
 
         if selected_only:
-            names = set(self._tree.selection())
-            entries = [e for e in self._all_entries if e['name'] in names]
+            sel_iids = set(self._tree.selection())
+            entries  = [e for e in self._all_entries if str(e['_idx']) in sel_iids]
         else:
             entries = self._all_entries
 

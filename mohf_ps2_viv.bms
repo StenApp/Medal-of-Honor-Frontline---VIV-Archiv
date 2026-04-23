@@ -1,0 +1,47 @@
+# MOH Frontline PS2 - C0FB VIV Archive (script 0.1.0)
+#   Medal of Honor Frontline PS2 (EA Los Angeles, 2002)
+#   Handles: comp.viv, level.viv, bLog.viv (PS2 variant)
+#   Format: C0FB custom EA archive
+# script for QuickBMS http://quickbms.aluigi.org
+
+endian big
+
+# --- Magic check ---
+idstring "\xc0\xfb"
+
+# --- Header (8 bytes) ---
+# Byte 0:2 = C0 FB (magic, already consumed by idstring)
+get HEADER_BASE short       # 0x02: vorberechnete Header-Endposition
+get NUM_FILES   short       # 0x04: Anzahl Eintraege
+get W2          short       # 0x06: unbekannt (0x0000 / 0x0001 / 0x0002)
+
+# --- Eintrag 0: Sonderformat [1B abyte][3B size][name\0] ---
+get ABYTE byte              # alignment-Byte
+get SIZE0 threebyte         # Dateigröße Eintrag 0
+get NAME0 string            # Dateiname Eintrag 0 (null-terminiert)
+
+# Alignment-Map: abyte -> align
+# 0x40 -> 64, 0x80 -> 128, 0xC0 -> 64 (Fallback), sonst 64
+if ABYTE == 0x80
+    math ALIGN = 128
+else
+    math ALIGN = 64
+endif
+
+# Offset Eintrag 0 = ceil(HEADER_BASE / ALIGN) * ALIGN
+math OFFSET0 = HEADER_BASE
+math TMP     = OFFSET0 % ALIGN
+if TMP != 0
+    math TMP     = ALIGN - TMP
+    math OFFSET0 += TMP
+endif
+
+log NAME0 OFFSET0 SIZE0
+
+# --- Eintraege 1..N: [3B offset][3B size][name\0] ---
+for i = 1 < NUM_FILES
+    get OFFSET threebyte
+    get SIZE   threebyte
+    get NAME   string
+    log NAME OFFSET SIZE
+next i
