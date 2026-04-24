@@ -24,8 +24,7 @@ EA archive format. MOHF uses two distinct variants, both supported by `moh_viv_g
 
 | File | Format | Notes |
 |------|--------|-------|
-| `comp.viv`, `BLOG*.viv`, `level.viv` | MOH custom (magic `C0 FB`) | Use `moh_viv_gui.py` |
-| `SHELL.viv` | Standard BIGF | Use `moh_viv_gui.py` or [vivtool](https://github.com/Aleksei-Miller/vivtool) |
+| `comp.viv`, `BLOG*.viv`, `level.viv`, `SHELL.viv` | MOH custom (magic `C0 FB`) or Standard BIGF| Use `moh_viv_gui.py` |
 
 The `C0 FB` format differs from BIGF in its header layout and entry structure. See `moh_viv_gui.py` for the full parser.  
 `level.viv` contains the MPF music index files (needed for full music extraction).
@@ -156,9 +155,6 @@ Output structure: `{output}\{Mission}\{Level}\{BankName}\sound_NNN.wav`
 | ABK version byte | `0x08` | `0x09` |
 | AST block sizes | Little-Endian | Little-Endian |
 | MPF version | 3.2 | 3.4 |
-| Shell audio | inside `SHELL.VIV` | `SHELL1.ASF` standalone |
-| Data storage | inside `BLOG*.VIV` archives | directly in DATA folders |
-
 ---
 
 ## Related
