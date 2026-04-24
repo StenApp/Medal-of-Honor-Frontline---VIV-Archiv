@@ -20,12 +20,12 @@ Covers archive formats, audio extraction, and format documentation.
 
 ### `.viv` — VIV Archive
 
-EA archive format. MOHF uses two distinct variants:
+EA archive format. MOHF uses two distinct variants, both supported by `moh_viv_gui.py`:
 
 | File | Format | Notes |
 |------|--------|-------|
 | `comp.viv`, `BLOG*.viv`, `level.viv` | MOH custom (magic `C0 FB`) | Use `moh_viv_gui.py` |
-| `SHELL.viv` | Standard BIGF | Use [vivtool](https://github.com/Aleksei-Miller/vivtool) |
+| `SHELL.viv` | Standard BIGF | Use `moh_viv_gui.py` or [vivtool](https://github.com/Aleksei-Miller/vivtool) |
 
 The `C0 FB` format differs from BIGF in its header layout and entry structure. See `moh_viv_gui.py` for the full parser.  
 `level.viv` contains the MPF music index files (needed for full music extraction).
