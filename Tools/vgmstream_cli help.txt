@@ -1,0 +1,39 @@
+vgmstream CLI decoder r2083 (Apr 23 2026)
+Usage: C:\Users\Sten\Downloads\PS2 MOHF tools\vgmstream-cli.exe [-o <outfile.wav>] [options] <infile> ...
+Options:
+    -o <outfile.wav>: name of output .wav file, default <infile>.wav
+       <outfile> wildcards can be ?s=subsong, ?n=stream name, ?f=infile
+    -m: print metadata only, don't decode
+    -i: ignore looping information and play the whole stream once
+    -l N.n: loop count, default 2.0
+    -f N.n: fade time in seconds after N loops, default 10.0
+    -d N.n: fade delay in seconds, default 0.0
+    -F: don't fade after N loops and play the rest of the stream
+    -e: set end-to-end looping (if file has no loop points)
+    -E: force end-to-end looping even if file has real loop points
+    -s N: select subsong N, if the format supports multiple subsongs
+    -S N: select end subsong N (set 0 for 'all')
+    -p: output to stdout (for piping into another program)
+    -P: output to stdout even if stdout is a terminal
+    -c: loop forever (continuously) to stdout
+    -L: append a smpl chunk and create a looping wav
+    -w: allow .wav in original sample format rather than mixing to PCM16
+    -V: print version info and supported extensions as JSON
+    -I: print requested file info as JSON
+    -h: print all commands
+Extra options:
+    -2 N: only output the Nth (first is 0) set of stereo channels
+    -x: decode and print adxencd command line to encode as ADX
+    -g: decode and print oggenc command line to encode as OGG
+    -b: decode and print batch variable commands
+    -v: validate extensions (for extension testing)
+    -r: reset and output a second file (for reset testing)
+    -k N: kills (seeks) N samples before decoding (for seek testing)
+       -2 seeks to loop start, -3 seeks to loop end
+    -K N: kills (seeks) again to N samples before decoding (for seek testing)
+    -t: print !tags found in !tags.m3u (for tag testing)
+    -T: print title (for title testing)
+    -D <max channels>: downmix to <max channels> (for plugin downmix testing)
+    -B <samples> force a sample buffer size (for api testing)
+    -W <type>: force .wav output format (1=PCM16, 2=PCM24, 3=PCM32, 4=float)
+    -O: decode but don't write to file (for performance testing)

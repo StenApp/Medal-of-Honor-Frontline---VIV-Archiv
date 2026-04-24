@@ -28,35 +28,47 @@ def fmt_size(n):
     return f"{n} B"
 
 def parse_viv_c0fb(data):
-    """C0 FB custom format.
+    """C0 FB custom format (PS2 und Xbox, identisches Layout).
 
-    PS2-Layout:  [2B magic][2B num_files BE][2B unk BE][...]
-    Xbox-Layout: [2B magic][2B unk BE][2B num_files BE][...]
+    HEADER (8 Byte):
+      00  2B  magic       C0 FB
+      02  2B  header_end  BE; Byte-Offset wo der Header-Bereich endet
+                          (= Beginn des ersten Datenblocks vor Alignment)
+      04  2B  num_files   BE; Anzahl der Eintraege
+      06  2B  redundant   = header_end >> 8 (High-Byte von header_end)
 
-    Erkennungsheuristik: Xbox hat auf Bytes 4:6 einen Wert > 0x00FF
-    (z.B. 0x011A = Header-Groesse). PS2 hat dort direkt num_files (<= ~100).
+    EINTRAG 0 (kein expliziter Offset):
+      00  1B  alignment   Ausrichtungseinheit fuer Datendaten-Start:
+                            0x40 -> align 64
+                            0x80 -> align 128
+                            0x00 -> align 256
+                            sonst -> Fallback 64
+      01  3B  size        BE
+      04  ..  name        null-terminiert
 
-    Pro Eintrag: [3B offset BE][3B size BE][name\0]
-    Erster Eintrag: [1B alignment][3B size][name\0]  (kein expliziter Offset)
+    EINTRAEGE 1..n:
+      00  3B  offset      BE; absoluter Byte-Offset in der Archivdatei
+      03  3B  size        BE
+      06  ..  name        null-terminiert
+
+    Nach dem letzten Eintrag: Nullbyte-Padding bis header_end.
+    Ab header_end: Dateidaten, alignment-ausgerichtet.
+
+    Beobachtungen:
+      - BLOG-Archive: num_files=3 oder 4, unk1=0x0000
+      - LEVEL-Archive: num_files=268..528
+      - COMP-Archive:  num_files=8..28
+      - PS2 und Xbox strukturell identisch; nur Dateigroessen unterscheiden sich
     """
-    w0 = struct.unpack('>H', data[4:6])[0]
-    w1 = struct.unpack('>H', data[6:8])[0]
-    if w0 > 0x00FF:
-        num_files, unk = w1, w0
-    else:
-        num_files, unk = w0, w1
+    header_end = struct.unpack('>H', data[2:4])[0]
+    num_files  = struct.unpack('>H', data[4:6])[0]
     meta = {
-        'format':    'MOH C0FB',
-        'magic':     data[0:4].hex().upper(),
-        'num_files': num_files,
-        'unk':       f"0x{unk:04X}",
-        'file_size': len(data),
+        'format':     'MOH C0FB',
+        'magic':      data[0:4].hex().upper(),
+        'header_end': f"0x{header_end:04X}",
+        'num_files':  num_files,
+        'file_size':  len(data),
     }
-
-    # Format: erster Eintrag immer [1B offset][3B size][name\0]
-    #         alle anderen Eintraege [3B offset][3B size][name\0]
-    # Der 1B-Offset ist der Header-End-Alignment-Wert
-    # (z.B. 0x40=64 fuer kleine Archive, 0x80=128 fuer groessere).
 
     import math
 
@@ -67,7 +79,6 @@ def parse_viv_c0fb(data):
             raise ValueError(f"Header-EOF bei Eintrag {i} (pos={pos})")
         if i == 0:
             # Erster Eintrag: [1B alignment][3B size][name\0]
-            # alignment-Byte=0x00 bedeutet alignment=0x100.
             alignment = data[pos]
             size_raw  = read_u24be(data, pos + 1)
             ns        = pos + 4
@@ -95,12 +106,10 @@ def parse_viv_c0fb(data):
     if raw and raw[0]['alignment'] is not None:
         abyte       = raw[0]['alignment']
         align       = {0x00: 0x100, 0x40: 0x40, 0x80: 0x80}.get(abyte, 0x40)
-        header_size = struct.unpack('>H', data[2:4])[0]
-        base        = header_size if header_size > pos - align else pos
+        base = header_end if header_end > pos - align else pos
         raw[0]['offset'] = math.ceil(base / align) * align
 
     # Zweiter Pass: Status setzen
-    is_blog = (unk == 0x0000)
     entries = []
     for i, e in enumerate(raw):
         size   = e['size_raw']

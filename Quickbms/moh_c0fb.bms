@@ -1,0 +1,55 @@
+# Medal of Honor - C0FB VIV archives (PS2 + Xbox)
+# Frontline, European Assault, Rising Sun, ...
+# script for QuickBMS http://quickbms.aluigi.org
+#
+# FORMAT (8 Byte Header, Big Endian):
+#   00  2B  magic       C0 FB
+#   02  2B  header_end  Byte-Offset Ende Headerbereich
+#   04  2B  num_files   Anzahl Eintraege
+#   06  2B  redundant   = header_end >> 8 (wird ignoriert)
+#
+# EINTRAG 0:
+#   00  1B  alignment   0x40=64  0x80=128  sonst=64
+#   01  3B  size
+#   04  ..  name (null-terminiert)
+#   Offset = header_end aufgerundet auf alignment
+#
+# EINTRAEGE 1..n:
+#   00  3B  offset      absolut
+#   03  3B  size
+#   06  ..  name (null-terminiert)
+
+endian big
+idstring "\xc0\xfb"
+
+get HEADER_END short
+get FILES short
+get REDUNDANT short
+
+# Eintrag 0: alignment-Byte bestimmt Ausrichtung des ersten Datenblocks
+get ABYTE byte
+get SIZE long
+math SIZE &= 0x00ffffff
+get NAME string
+
+if ABYTE == 0x80
+    math ALIGN = 128
+else
+    math ALIGN = 64
+endif
+
+goto HEADER_END
+align ALIGN
+getpos OFFSET
+
+log NAME OFFSET SIZE
+
+# Eintraege 1..n
+for i = 1 < FILES
+    get OFFSET long
+    math OFFSET &= 0x00ffffff
+    get SIZE long
+    math SIZE &= 0x00ffffff
+    get NAME string
+    log NAME OFFSET SIZE
+next i
