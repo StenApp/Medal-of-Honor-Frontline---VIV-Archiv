@@ -24,6 +24,40 @@
   0x001482C9  [ASCII]  Animation
   0x001482FA  [ASCII]  AnimationSet
   0x00148322  [ASCII]  Animation
+  
+    0x00127BF0  [ASCII]  TEXTURE COUNTER
+  0x00146EF0  [ASCII]  TextureFilename
+  0x001470D3  [ASCII]  MeshTextureCoords
+  0x00147100  [ASCII]  nTextureCoords
+  0x00147126  [ASCII]  textureCoords
+  0x0014713B  [ASCII]  nTextureCoords
+  0x00147BD8  [ASCII]  TextureFilename
+  0x00147DBB  [ASCII]  MeshTextureCoords
+  0x00147DE8  [ASCII]  nTextureCoords
+  0x00147E0E  [ASCII]  textureCoords
+  0x00147E23  [ASCII]  nTextureCoords
+  
+    0x00105B68  [ASCII]  ID3DXMeshOptimize: Cannot do AttributeSort because %d vertex needs to be moved and either IgnoreVerts or ShareVB is set
+  0x00146FD4  [ASCII]  MeshFace
+  0x0014704F  [ASCII]  MeshFaceWraps
+  0x001470D3  [ASCII]  MeshTextureCoords
+  0x00147157  [ASCII]  MeshMaterialList
+  0x001471EE  [ASCII]  MeshNormals
+  0x0014726C  [ASCII]  MeshFace
+  0x001472A7  [ASCII]  MeshVertexColors
+  0x0014732B  [ASCII]  Mesh
+  0x0014739F  [ASCII]  MeshFace
+  0x001476D6  [ASCII]  ProgressiveMesh
+  0x00147CBC  [ASCII]  MeshFace
+  0x00147D37  [ASCII]  MeshFaceWraps
+  0x00147DBB  [ASCII]  MeshTextureCoords
+  0x00147E3F  [ASCII]  MeshMaterialList
+  0x00147ED6  [ASCII]  MeshNormals
+  0x00147F54  [ASCII]  MeshFace
+  0x00147F8F  [ASCII]  MeshVertexColors
+  0x00148013  [ASCII]  Mesh
+  0x00148087  [ASCII]  MeshFace
+  0x001483BE  [ASCII]  ProgressiveMesh
 
   0x0011E300  [ASCII]  %s.sin
     0x0011E2A3  [ASCII]  @%s.cbs
