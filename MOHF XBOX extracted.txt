@@ -1,0 +1,911 @@
+Pfad und Name	Grösse KiB
+
+MOHF XBOX\extracted\
+
+MOHF XBOX\extracted\blog\
+MOHF XBOX\extracted\blog\j1_1_pg1.xsh	256,16
+MOHF XBOX\extracted\blog\j1_1_pg2.xsh	256,16
+MOHF XBOX\extracted\blog\j1_1_pg3.xsh	256,16
+
+MOHF XBOX\extracted\comp viv\
+MOHF XBOX\extracted\comp viv\1_1_ART_c0.cpt	1.484,00
+MOHF XBOX\extracted\comp viv\1_1_ART_c1.cpt	1.164,92
+MOHF XBOX\extracted\comp viv\1_1_ART_c2.cpt	1.329,16
+MOHF XBOX\extracted\comp viv\1_1_ART_c3.cpt	1.157,89
+MOHF XBOX\extracted\comp viv\1_1_ART_c4.cpt	1.050,81
+MOHF XBOX\extracted\comp viv\1_1_ART_c5.cpt	1.424,38
+MOHF XBOX\extracted\comp viv\1_1_ART_c6.cpt	1.364,51
+MOHF XBOX\extracted\comp viv\1_1_C_c0.cdb	396,10
+MOHF XBOX\extracted\comp viv\1_1_C_c1.cdb	257,18
+MOHF XBOX\extracted\comp viv\1_1_C_c2.cdb	237,49
+MOHF XBOX\extracted\comp viv\1_1_C_c3.cdb	322,29
+MOHF XBOX\extracted\comp viv\1_1_C_c4.cdb	306,89
+MOHF XBOX\extracted\comp viv\1_1_C_c5.cdb	359,91
+MOHF XBOX\extracted\comp viv\1_1_C_c6.cdb	275,95
+
+MOHF XBOX\extracted\level viv\
+MOHF XBOX\extracted\level viv\1_1_ART.cpt	2.064,13
+MOHF XBOX\extracted\level viv\1_1_C.cdb	0,30
+MOHF XBOX\extracted\level viv\1_1_P.bpd	673,95
+MOHF XBOX\extracted\level viv\1_1_P.psp	23,04
+MOHF XBOX\extracted\level viv\1_1_Uboat_bobbing.msh	200,88
+MOHF XBOX\extracted\level viv\1_1_Uboat_bobbing.mvd	3,80
+MOHF XBOX\extracted\level viv\1_1animSnd.som	0,09
+MOHF XBOX\extracted\level viv\1_1M.mpf	0,26
+MOHF XBOX\extracted\level viv\1_1mustangP47.msh	20,75
+MOHF XBOX\extracted\level viv\1_1propSnd.som	1,29
+MOHF XBOX\extracted\level viv\9mm.msh	3,00
+MOHF XBOX\extracted\level viv\22long.msh	3,00
+MOHF XBOX\extracted\level viv\30Cal.msh	3,38
+MOHF XBOX\extracted\level viv\AlliedSoldier_A.cbs	0,20
+MOHF XBOX\extracted\level viv\AlliedSoldier_A.sin	7,97
+MOHF XBOX\extracted\level viv\AlliedSoldier_DeadGuy.cbs	0,52
+MOHF XBOX\extracted\level viv\AlliedSoldier_DeadGuy.sin	0,50
+MOHF XBOX\extracted\level viv\AmbienceTrigger.cbs	0,19
+MOHF XBOX\extracted\level viv\AmbienceTrigger.sin	0,33
+MOHF XBOX\extracted\level viv\AnimatedMovingMech.cbs	1,72
+MOHF XBOX\extracted\level viv\AnimatedMovingMech.sin	0,51
+MOHF XBOX\extracted\level viv\AnimMoveMechLoop.cbs	0,20
+MOHF XBOX\extracted\level viv\AnimMoveMechLoop.sin	0,39
+MOHF XBOX\extracted\level viv\Barrel_Metal_Flammable_Red.mpk	109,50
+MOHF XBOX\extracted\level viv\BarrelMolotovSwap.cbs	1,06
+MOHF XBOX\extracted\level viv\BarrelMolotovSwap.sin	0,61
+MOHF XBOX\extracted\level viv\BarrelMolotovSwapping.mpk	30,33
+MOHF XBOX\extracted\level viv\BARSTGShell.xsh	4,28
+MOHF XBOX\extracted\level viv\bazookashell.msh	14,56
+MOHF XBOX\extracted\level viv\bazookashell.xsh	5,22
+MOHF XBOX\extracted\level viv\BlackCircle.xsh	64,14
+MOHF XBOX\extracted\level viv\BlackSprite.xsh	0,19
+MOHF XBOX\extracted\level viv\BlkBkgrnd.xsh	0,17
+MOHF XBOX\extracted\level viv\BlkBkgrnd2.xsh	0,17
+MOHF XBOX\extracted\level viv\BM01.dmf	171,01
+MOHF XBOX\extracted\level viv\BM02.dmf	202,73
+MOHF XBOX\extracted\level viv\BM03.dmf	179,95
+MOHF XBOX\extracted\level viv\BM11.dmf	138,60
+MOHF XBOX\extracted\level viv\BM12.dmf	138,59
+MOHF XBOX\extracted\level viv\BM22.dmf	165,59
+MOHF XBOX\extracted\level viv\BM33.dmf	166,95
+MOHF XBOX\extracted\level viv\BM37.dmf	169,77
+MOHF XBOX\extracted\level viv\BM37_20L.dmf	166,95
+MOHF XBOX\extracted\level viv\Bomb_1_1_01.mvd	3,17
+MOHF XBOX\extracted\level viv\Bomb_1_1_02.mvd	3,17
+MOHF XBOX\extracted\level viv\BreakingWoodBoxSwap.cbs	0,42
+MOHF XBOX\extracted\level viv\BreakingWoodBoxSwap.sin	0,41
+MOHF XBOX\extracted\level viv\BruteForceAnimChild.cbs	2,09
+MOHF XBOX\extracted\level viv\BruteForceAnimChild.sin	0,74
+MOHF XBOX\extracted\level viv\bsbifunc.dat	4,52
+MOHF XBOX\extracted\level viv\BuildingExplosionParent.cbs	0,36
+MOHF XBOX\extracted\level viv\BuildingExplosionParent.sin	0,32
+MOHF XBOX\extracted\level viv\Bullethole.xsh	16,14
+MOHF XBOX\extracted\level viv\BumpEnableTrigger.cbs	0,18
+MOHF XBOX\extracted\level viv\BumpEnableTrigger.sin	0,29
+MOHF XBOX\extracted\level viv\checkedbox.xsh	1,45
+MOHF XBOX\extracted\level viv\CigarBox_Closed.msh	4,75
+MOHF XBOX\extracted\level viv\CigarBox_Empty.msh	2,75
+MOHF XBOX\extracted\level viv\CigarBox_Open.msh	19,25
+MOHF XBOX\extracted\level viv\clearcheckbox.xsh	1,45
+MOHF XBOX\extracted\level viv\ClipBoard.msh	8,75
+MOHF XBOX\extracted\level viv\colt_weapon.dmf	296,63
+MOHF XBOX\extracted\level viv\colt_weapon.skl	3,61
+MOHF XBOX\extracted\level viv\Colt45Ammo.cbs	0,18
+MOHF XBOX\extracted\level viv\Colt45Ammo.sin	0,28
+MOHF XBOX\extracted\level viv\Colt45Weapon.cbs	0,20
+MOHF XBOX\extracted\level viv\Colt45Weapon.sin	0,28
+MOHF XBOX\extracted\level viv\comicFont.xfn	43,83
+MOHF XBOX\extracted\level viv\compassDial.xsh	17,20
+MOHF XBOX\extracted\level viv\compassEdge.xsh	17,20
+MOHF XBOX\extracted\level viv\Conversation.cbs	0,45
+MOHF XBOX\extracted\level viv\Conversation.sin	0,41
+MOHF XBOX\extracted\level viv\crate.msh	6,31
+MOHF XBOX\extracted\level viv\Crate_Hide_Swapping.mpk	23,88
+MOHF XBOX\extracted\level viv\crosshair1.xsh	4,13
+MOHF XBOX\extracted\level viv\DDayIntro.xfn	55,33
+MOHF XBOX\extracted\level viv\debugFont.xfn	50,95
+MOHF XBOX\extracted\level viv\dent.xsh	4,14
+MOHF XBOX\extracted\level viv\Divot_A.xsh	16,14
+MOHF XBOX\extracted\level viv\Divot_B.xsh	16,14
+MOHF XBOX\extracted\level viv\Divot_C.xsh	16,14
+MOHF XBOX\extracted\level viv\Door_square_1_1.msh	20,19
+MOHF XBOX\extracted\level viv\DoorSwingCW.cbs	2,08
+MOHF XBOX\extracted\level viv\DoorSwingCW.sin	0,79
+MOHF XBOX\extracted\level viv\Dot.xsh	1,14
+MOHF XBOX\extracted\level viv\DPad_blank.xsh	0,66
+MOHF XBOX\extracted\level viv\DPad_Down.xsh	0,66
+MOHF XBOX\extracted\level viv\DPad_DownHL.xsh	0,28
+MOHF XBOX\extracted\level viv\DPad_Left.xsh	0,66
+MOHF XBOX\extracted\level viv\DPad_LeftHL.xsh	0,28
+MOHF XBOX\extracted\level viv\DPad_Right.xsh	0,66
+MOHF XBOX\extracted\level viv\DPad_RightHL.xsh	0,30
+MOHF XBOX\extracted\level viv\DPad_Up.xsh	0,66
+MOHF XBOX\extracted\level viv\DPad_UpHL.xsh	0,28
+MOHF XBOX\extracted\level viv\emt_1_1.emt	4.182,46
+MOHF XBOX\extracted\level viv\enemym1garand.msh	48,75
+MOHF XBOX\extracted\level viv\enemythompson.msh	148,81
+MOHF XBOX\extracted\level viv\EventSystem.aem	5,71
+MOHF XBOX\extracted\level viv\ExplodingBarrelSwap_1_1.cbs	0,80
+MOHF XBOX\extracted\level viv\ExplodingBarrelSwap_1_1.sin	0,51
+MOHF XBOX\extracted\level viv\fakeID.xsh	5,20
+MOHF XBOX\extracted\level viv\Falling_Bomb.msh	7,13
+MOHF XBOX\extracted\level viv\Falling_BuldingPart_1_1.cbs	0,19
+MOHF XBOX\extracted\level viv\Falling_BuldingPart_1_1.sin	0,34
+MOHF XBOX\extracted\level viv\FallingBomb_HitGround.cbs	0,71
+MOHF XBOX\extracted\level viv\FallingBomb_HitGround.sin	0,45
+MOHF XBOX\extracted\level viv\Field_Phone_1_1.msh	57,25
+MOHF XBOX\extracted\level viv\FieldSurgeonPack.msh	45,67
+MOHF XBOX\extracted\level viv\FlyThrough_1_1.cbs	0,30
+MOHF XBOX\extracted\level viv\FlyThrough_1_1.sin	0,40
+MOHF XBOX\extracted\level viv\GM01GT01_HelmetGerman.msh	21,69
+MOHF XBOX\extracted\level viv\GM01GT01_HelmetGermanWehr.msh	76,22
+MOHF XBOX\extracted\level viv\GM03GT05_OfficerCapGermanWehr.msh	69,50
+MOHF XBOX\extracted\level viv\GM04GT09_SideCapGermanWehr.msh	70,50
+MOHF XBOX\extracted\level viv\GM11GT22_HelmetUSAirborneNet.msh	81,59
+MOHF XBOX\extracted\level viv\grenade.msh	5,50
+MOHF XBOX\extracted\level viv\grenade.xsh	16,14
+MOHF XBOX\extracted\level viv\grenade_sml.msh	36,92
+MOHF XBOX\extracted\level viv\GrenadeAmmo.cbs	0,18
+MOHF XBOX\extracted\level viv\GrenadeAmmo.sin	0,28
+MOHF XBOX\extracted\level viv\GrenadeWeapon.cbs	0,18
+MOHF XBOX\extracted\level viv\GrenadeWeapon.sin	0,28
+MOHF XBOX\extracted\level viv\Grey.xsh	1,14
+MOHF XBOX\extracted\level viv\GunVehicle.cbs	4,75
+MOHF XBOX\extracted\level viv\GunVehicle.sin	1,45
+MOHF XBOX\extracted\level viv\Health10.cbs	0,43
+MOHF XBOX\extracted\level viv\Health10.sin	0,31
+MOHF XBOX\extracted\level viv\Health25.cbs	0,21
+MOHF XBOX\extracted\level viv\Health25.sin	0,28
+MOHF XBOX\extracted\level viv\Health50.cbs	0,21
+MOHF XBOX\extracted\level viv\Health50.sin	0,28
+MOHF XBOX\extracted\level viv\healthMeter.xsh	17,20
+MOHF XBOX\extracted\level viv\HierobjVehicle.cbs	4,52
+MOHF XBOX\extracted\level viv\HierobjVehicle.sin	1,25
+MOHF XBOX\extracted\level viv\hitMeter.xsh	17,20
+MOHF XBOX\extracted\level viv\hole.xsh	16,14
+MOHF XBOX\extracted\level viv\house_1_1_01.mvd	0,98
+MOHF XBOX\extracted\level viv\house_1_1_02.mvd	0,98
+MOHF XBOX\extracted\level viv\house_chunk_1_1_01.msh	22,25
+MOHF XBOX\extracted\level viv\house_chunk_1_1_02.msh	33,81
+MOHF XBOX\extracted\level viv\house_remove_1_1.msh	59,00
+MOHF XBOX\extracted\level viv\Human.skl	3,88
+MOHF XBOX\extracted\level viv\InterrogationOfficer.cbs	0,49
+MOHF XBOX\extracted\level viv\InterrogationOfficer.sin	7,65
+MOHF XBOX\extracted\level viv\InterrogationVictim.cbs	1,14
+MOHF XBOX\extracted\level viv\InterrogationVictim.sin	0,78
+MOHF XBOX\extracted\level viv\jeep_body_1_1.mvd	7,17
+MOHF XBOX\extracted\level viv\Jeep_Driver.cbs	0,54
+MOHF XBOX\extracted\level viv\Jeep_Driver.sin	0,55
+MOHF XBOX\extracted\level viv\Jeep_Gunner.cbs	0,75
+MOHF XBOX\extracted\level viv\Jeep_Gunner.sin	0,65
+MOHF XBOX\extracted\level viv\Jeep_Passenger.cbs	0,54
+MOHF XBOX\extracted\level viv\Jeep_Passenger.sin	0,55
+MOHF XBOX\extracted\level viv\JeepBody_1_1.cbs	0,46
+MOHF XBOX\extracted\level viv\JeepBody_1_1.sin	0,45
+MOHF XBOX\extracted\level viv\JeepTire_1_1.cbs	0,15
+MOHF XBOX\extracted\level viv\JeepTire_1_1.sin	0,36
+MOHF XBOX\extracted\level viv\KAR98.msh	24,75
+MOHF XBOX\extracted\level viv\knifethrown.msh	19,88
+MOHF XBOX\extracted\level viv\L1_button.xsh	2,16
+MOHF XBOX\extracted\level viv\L2_button.xsh	2,16
+MOHF XBOX\extracted\level viv\LandMineTriggerParent.cbs	1,40
+MOHF XBOX\extracted\level viv\LandMineTriggerParent.sin	0,46
+MOHF XBOX\extracted\level viv\level1test_BK.xsh	64,14
+MOHF XBOX\extracted\level viv\level1test_DN.xsh	2,20
+MOHF XBOX\extracted\level viv\level1test_FR.xsh	64,14
+MOHF XBOX\extracted\level viv\level1test_LF.xsh	64,14
+MOHF XBOX\extracted\level viv\level1test_RT.xsh	64,14
+MOHF XBOX\extracted\level viv\level1test_UP.xsh	64,14
+MOHF XBOX\extracted\level viv\levelfile.lfc	27,71
+MOHF XBOX\extracted\level viv\LoadOneShotSound.cbs	0,16
+MOHF XBOX\extracted\level viv\LoadOneShotSound.sin	0,31
+MOHF XBOX\extracted\level viv\M1_1_ClipBoard.cbs	0,20
+MOHF XBOX\extracted\level viv\M1_1_ClipBoard.sin	0,28
+MOHF XBOX\extracted\level viv\M1_1_Field_Phone.cbs	0,19
+MOHF XBOX\extracted\level viv\M1_1_Field_Phone.sin	0,31
+MOHF XBOX\extracted\level viv\M1_1_ResistanceDrop.cbs	0,25
+MOHF XBOX\extracted\level viv\M1_1_ResistanceDrop.sin	0,32
+MOHF XBOX\extracted\level viv\M1_1_ResistanceDropEmpty.cbs	0,16
+MOHF XBOX\extracted\level viv\M1_1_ResistanceDropEmpty.sin	0,30
+MOHF XBOX\extracted\level viv\M1_1_WallExplosion.cbs	0,64
+MOHF XBOX\extracted\level viv\M1_1_WallExplosion.sin	0,46
+MOHF XBOX\extracted\level viv\M1_1ResistanceDrop_Lid.cbs	0,32
+MOHF XBOX\extracted\level viv\M1_1ResistanceDrop_Lid.sin	0,39
+MOHF XBOX\extracted\level viv\m1_weapon.dmf	329,88
+MOHF XBOX\extracted\level viv\m1_weapon.skl	3,76
+MOHF XBOX\extracted\level viv\m1clip.msh	17,36
+MOHF XBOX\extracted\level viv\M1GarandAmmo.cbs	0,18
+MOHF XBOX\extracted\level viv\M1GarandAmmo.sin	0,28
+MOHF XBOX\extracted\level viv\M1GarandWeapon.cbs	0,18
+MOHF XBOX\extracted\level viv\M1GarandWeapon.sin	0,28
+MOHF XBOX\extracted\level viv\Mark2Spoon.msh	70,38
+MOHF XBOX\extracted\level viv\markIIgrenade_weapon.dmf	301,18
+MOHF XBOX\extracted\level viv\markIIgrenade_weapon.skl	3,45
+MOHF XBOX\extracted\level viv\MedicalKit.msh	23,55
+MOHF XBOX\extracted\level viv\MedicinalCanteen.msh	24,17
+MOHF XBOX\extracted\level viv\MG30_cal.msh	169,31
+MOHF XBOX\extracted\level viv\mg42gun.msh	101,88
+MOHF XBOX\extracted\level viv\MG42GunTripod.msh	98,25
+MOHF XBOX\extracted\level viv\MMGPoint.cbs	0,93
+MOHF XBOX\extracted\level viv\MMGPoint.sin	0,50
+MOHF XBOX\extracted\level viv\MObjective_1_1.cbs	1,11
+MOHF XBOX\extracted\level viv\MObjective_1_1.sin	0,39
+MOHF XBOX\extracted\level viv\MObjective_Generic.cbs	2,19
+MOHF XBOX\extracted\level viv\MObjective_Generic.sin	0,70
+MOHF XBOX\extracted\level viv\MountedMachineGun.cbs	0,16
+MOHF XBOX\extracted\level viv\MountedMachineGun.sin	0,29
+MOHF XBOX\extracted\level viv\mp40.msh	70,00
+MOHF XBOX\extracted\level viv\MuzzleFlash.xsh	17,20
+MOHF XBOX\extracted\level viv\muzzleNPC.msh	50,69
+MOHF XBOX\extracted\level viv\muzzlePlayer.msh	17,69
+MOHF XBOX\extracted\level viv\Navpoint.cbs	0,20
+MOHF XBOX\extracted\level viv\Navpoint.sin	0,31
+MOHF XBOX\extracted\level viv\Null_Attach_Point.msh	0,52
+MOHF XBOX\extracted\level viv\ObjectivePickUp.cbs	0,35
+MOHF XBOX\extracted\level viv\ObjectivePickUp.sin	0,35
+MOHF XBOX\extracted\level viv\objFont.xfn	41,95
+MOHF XBOX\extracted\level viv\P47bomb_building1_1.mvd	11,30
+MOHF XBOX\extracted\level viv\P47dogfight_1_1.mvd	7,55
+MOHF XBOX\extracted\level viv\P47flyby1_1.mvd	9,42
+MOHF XBOX\extracted\level viv\P47flyingcircle1_1.mvd	21,92
+MOHF XBOX\extracted\level viv\P47rocket_tank1_1.mvd	11,30
+MOHF XBOX\extracted\level viv\P47strafe_mg_1_1.mvd	8,80
+MOHF XBOX\extracted\level viv\PathFinderTrigger.cbs	0,21
+MOHF XBOX\extracted\level viv\PathFinderTrigger.sin	0,34
+MOHF XBOX\extracted\level viv\Pause.xsh	4,17
+MOHF XBOX\extracted\level viv\PauseScr.scr	14,43
+MOHF XBOX\extracted\level viv\PauseScreenFont.xfn	66,95
+MOHF XBOX\extracted\level viv\PickUp_Grenade_Box.msh	47,17
+MOHF XBOX\extracted\level viv\pistol_ammo_sml.msh	15,67
+MOHF XBOX\extracted\level viv\PistolShell.xsh	5,20
+MOHF XBOX\extracted\level viv\Player.cbs	11,78
+MOHF XBOX\extracted\level viv\Player.sin	2,40
+MOHF XBOX\extracted\level viv\PlayFireLoopParent.cbs	0,13
+MOHF XBOX\extracted\level viv\PlayFireLoopParent.sin	0,27
+MOHF XBOX\extracted\level viv\PlaySoundLoop.cbs	0,19
+MOHF XBOX\extracted\level viv\PlaySoundLoop.sin	0,30
+MOHF XBOX\extracted\level viv\popupBack.xsh	4,14
+MOHF XBOX\extracted\level viv\PopupDisplay.xfn	40,45
+MOHF XBOX\extracted\level viv\popupSubtitleBack.xsh	4,14
+MOHF XBOX\extracted\level viv\ProjectileGenerator.cbs	2,18
+MOHF XBOX\extracted\level viv\ProjectileGenerator.sin	0,66
+MOHF XBOX\extracted\level viv\ProjectileGenerator_2_1.cbs	0,62
+MOHF XBOX\extracted\level viv\ProjectileGenerator_2_1.sin	0,30
+MOHF XBOX\extracted\level viv\ProjectileGenerator_NoFlash_MG42Sound.cbs	0,16
+MOHF XBOX\extracted\level viv\ProjectileGenerator_NoFlash_MG42Sound.sin	0,30
+MOHF XBOX\extracted\level viv\Puncture.xsh	16,14
+MOHF XBOX\extracted\level viv\R1_button.xsh	2,16
+MOHF XBOX\extracted\level viv\R2_button.xsh	2,16
+MOHF XBOX\extracted\level viv\RemoteFakeDoorTrigger.cbs	0,29
+MOHF XBOX\extracted\level viv\RemoteFakeDoorTrigger.sin	0,34
+MOHF XBOX\extracted\level viv\RiflePickup.msh	21,92
+MOHF XBOX\extracted\level viv\RifleShell.xsh	16,14
+MOHF XBOX\extracted\level viv\rocket.msh	14,00
+MOHF XBOX\extracted\level viv\Rocket_1_1.cbs	0,61
+MOHF XBOX\extracted\level viv\Rocket_1_1.sin	0,36
+MOHF XBOX\extracted\level viv\rocket_firing.mvd	2,23
+MOHF XBOX\extracted\level viv\Shadow.xsh	2,20
+MOHF XBOX\extracted\level viv\ShotgunAmmo.cbs	0,73
+MOHF XBOX\extracted\level viv\ShotgunAmmo.sin	0,31
+MOHF XBOX\extracted\level viv\ShotgunShell.msh	3,38
+MOHF XBOX\extracted\level viv\shotgunshell.xsh	16,16
+MOHF XBOX\extracted\level viv\ShotgunWeapon.cbs	0,70
+MOHF XBOX\extracted\level viv\ShotgunWeapon.sin	0,31
+MOHF XBOX\extracted\level viv\smallMPFont.xfn	22,83
+MOHF XBOX\extracted\level viv\smgshell.xsh	5,20
+MOHF XBOX\extracted\level viv\soldier.cls	3,02
+MOHF XBOX\extracted\level viv\Soldier.skl	3,88
+MOHF XBOX\extracted\level viv\soldier_easy.cls	3,02
+MOHF XBOX\extracted\level viv\soldier_easyLarge.cls	3,02
+MOHF XBOX\extracted\level viv\soldier_medium.cls	3,02
+MOHF XBOX\extracted\level viv\soldier_mediumLarge.cls	3,02
+MOHF XBOX\extracted\level viv\Soldier_SayGetOutOfTheOpen.cbs	0,35
+MOHF XBOX\extracted\level viv\Soldier_SayGetOutOfTheOpen.sin	8,06
+MOHF XBOX\extracted\level viv\Soldier_SayIncoming.cbs	0,35
+MOHF XBOX\extracted\level viv\Soldier_SayIncoming.sin	8,06
+MOHF XBOX\extracted\level viv\Soldier_SayPlanesAbove.cbs	0,35
+MOHF XBOX\extracted\level viv\Soldier_SayPlanesAbove.sin	8,06
+MOHF XBOX\extracted\level viv\Soldier_SayTheyreAfterTheTanks.cbs	0,35
+MOHF XBOX\extracted\level viv\Soldier_SayTheyreAfterTheTanks.sin	8,06
+MOHF XBOX\extracted\level viv\SoldierA_Guard.cbs	0,15
+MOHF XBOX\extracted\level viv\SoldierA_Guard.sin	7,35
+MOHF XBOX\extracted\level viv\SoldierA_MachineGunNest.cbs	35,54
+MOHF XBOX\extracted\level viv\SoldierA_MachineGunNest.sin	17,91
+MOHF XBOX\extracted\level viv\SoldierA_Platform.cbs	0,15
+MOHF XBOX\extracted\level viv\SoldierA_Platform.sin	7,35
+MOHF XBOX\extracted\level viv\SoldierA_Roamer.cbs	183,28
+MOHF XBOX\extracted\level viv\SoldierA_Roamer.sin	38,43
+MOHF XBOX\extracted\level viv\SoldierA_StayOnPath.cbs	0,16
+MOHF XBOX\extracted\level viv\SoldierA_StayOnPath.sin	7,84
+MOHF XBOX\extracted\level viv\SoldierB_Defender.cbs	0,15
+MOHF XBOX\extracted\level viv\SoldierB_Defender.sin	7,44
+MOHF XBOX\extracted\level viv\SoldierB_Roamer.cbs	2,08
+MOHF XBOX\extracted\level viv\SoldierB_Roamer.sin	7,97
+MOHF XBOX\extracted\level viv\SoldierB_StayOnPath.cbs	0,16
+MOHF XBOX\extracted\level viv\SoldierB_StayOnPath.sin	7,93
+MOHF XBOX\extracted\level viv\SoldierC_Roamer.cbs	2,89
+MOHF XBOX\extracted\level viv\SoldierC_Roamer.sin	8,09
+MOHF XBOX\extracted\level viv\SpiderWeb.xsh	16,14
+MOHF XBOX\extracted\level viv\Splintered_hole.xsh	16,14
+MOHF XBOX\extracted\level viv\Star.xsh	4,14
+MOHF XBOX\extracted\level viv\StartAttachedById.cbs	0,58
+MOHF XBOX\extracted\level viv\StartAttachedById.sin	0,48
+MOHF XBOX\extracted\level viv\StartAttachedById01.cbs	0,15
+MOHF XBOX\extracted\level viv\StartAttachedById01.sin	0,41
+MOHF XBOX\extracted\level viv\StartAttachedById02.cbs	0,15
+MOHF XBOX\extracted\level viv\StartAttachedById02.sin	0,41
+MOHF XBOX\extracted\level viv\StartAttachedById03.cbs	0,15
+MOHF XBOX\extracted\level viv\StartAttachedById03.sin	0,41
+MOHF XBOX\extracted\level viv\StartBeachExplosionBig.cbs	0,61
+MOHF XBOX\extracted\level viv\StartBeachExplosionBig.sin	0,42
+MOHF XBOX\extracted\level viv\StartBrokenById.cbs	0,28
+MOHF XBOX\extracted\level viv\StartBrokenById.sin	0,45
+MOHF XBOX\extracted\level viv\StartByIdDeathAmbush.cbs	0,38
+MOHF XBOX\extracted\level viv\StartByIdDeathAmbush.sin	0,56
+MOHF XBOX\extracted\level viv\StartByIdMech.cbs	0,14
+MOHF XBOX\extracted\level viv\StartByIdMech.sin	0,48
+MOHF XBOX\extracted\level viv\StartByIdObject.cbs	1,50
+MOHF XBOX\extracted\level viv\StartByIdObject.sin	0,68
+MOHF XBOX\extracted\level viv\StartHierObjByID.cbs	0,23
+MOHF XBOX\extracted\level viv\StartHierObjByID.sin	0,33
+MOHF XBOX\extracted\level viv\StartHierObjOnInitialize.cbs	0,74
+MOHF XBOX\extracted\level viv\StartHierObjOnInitialize.sin	0,39
+MOHF XBOX\extracted\level viv\StartOnInitialize.cbs	0,18
+MOHF XBOX\extracted\level viv\StartOnInitialize.sin	0,41
+MOHF XBOX\extracted\level viv\StartParticleRandomRepeater.cbs	0,41
+MOHF XBOX\extracted\level viv\StartParticleRandomRepeater.sin	0,40
+MOHF XBOX\extracted\level viv\StartParticleSystem.cbs	0,53
+MOHF XBOX\extracted\level viv\StartParticleSystem.sin	0,49
+MOHF XBOX\extracted\level viv\StartPowerup.cbs	0,29
+MOHF XBOX\extracted\level viv\StartPowerup.sin	0,41
+MOHF XBOX\extracted\level viv\StartPowerUpOnInit.cbs	0,14
+MOHF XBOX\extracted\level viv\StartPowerUpOnInit.sin	0,29
+MOHF XBOX\extracted\level viv\stickgrenade.msh	7,75
+MOHF XBOX\extracted\level viv\stickgrenade.xsh	5,22
+MOHF XBOX\extracted\level viv\Stuka_fly.msh	37,44
+MOHF XBOX\extracted\level viv\STUKAdogfight_1_1.mvd	4,73
+MOHF XBOX\extracted\level viv\subtitleFont.xfn	41,95
+MOHF XBOX\extracted\level viv\Tank_PIV_Body.msh	105,50
+MOHF XBOX\extracted\level viv\Tank_PIV_Body_Destroyed.msh	108,13
+MOHF XBOX\extracted\level viv\Tank_PIV_Cannon01.msh	37,88
+MOHF XBOX\extracted\level viv\Tank_PIV_Cannon01_Destroyed.msh	37,00
+MOHF XBOX\extracted\level viv\Tank_PIV_Mg01.msh	17,88
+MOHF XBOX\extracted\level viv\Tank_PIV_Tread01.mpk	303,88
+MOHF XBOX\extracted\level viv\Tank_PIV_Tread01_Destroyed.msh	118,00
+MOHF XBOX\extracted\level viv\Tank_PIV_Tread02.mpk	306,88
+MOHF XBOX\extracted\level viv\Tank_PIV_Tread02_Destroyed.msh	117,25
+MOHF XBOX\extracted\level viv\Tank_PIV_Turret01.msh	43,63
+MOHF XBOX\extracted\level viv\Tank_PIV_Turret01_Destroyed.msh	42,63
+MOHF XBOX\extracted\level viv\TankVehicle.cbs	2,21
+MOHF XBOX\extracted\level viv\TankVehicle.sin	1,03
+MOHF XBOX\extracted\level viv\tpk1_1.tpk	789,13
+MOHF XBOX\extracted\level viv\tracer.xsh	1,70
+MOHF XBOX\extracted\level viv\TransHangout_SoldierListener1.cbs	1,06
+MOHF XBOX\extracted\level viv\TransHangout_SoldierListener1.sin	7,77
+MOHF XBOX\extracted\level viv\TransHangout_SoldierTalker1.cbs	1,77
+MOHF XBOX\extracted\level viv\TransHangout_SoldierTalker1.sin	7,84
+MOHF XBOX\extracted\level viv\Tri_button.xsh	2,16
+MOHF XBOX\extracted\level viv\UHM1_1.dmf	1.598,65
+MOHF XBOX\extracted\level viv\UHM02.dmf	1.598,65
+MOHF XBOX\extracted\level viv\Vehicle_Jeep_Body.msh	119,47
+MOHF XBOX\extracted\level viv\Vehicle_Jeep_Wheel.msh	15,25
+MOHF XBOX\extracted\level viv\Vhcl_Jp_Tr_FrntL_1_1.mvd	7,23
+MOHF XBOX\extracted\level viv\Vhcl_Jp_Tr_FrntR_1_1.mvd	7,86
+MOHF XBOX\extracted\level viv\Vhcl_Jp_Tr_RrL_1_1.mvd	7,86
+MOHF XBOX\extracted\level viv\Vhcl_Jp_Tr_RrR_1_1.mvd	12,23
+MOHF XBOX\extracted\level viv\walbrk.mpk	381,63
+MOHF XBOX\extracted\level viv\WaltherP38.msh	93,88
+MOHF XBOX\extracted\level viv\weapbul_easy.dat	6,62
+MOHF XBOX\extracted\level viv\weapbul_hard.dat	6,62
+MOHF XBOX\extracted\level viv\weapbul_medium.dat	6,62
+MOHF XBOX\extracted\level viv\weapbul_mp.dat	6,62
+MOHF XBOX\extracted\level viv\X_button.xsh	2,16
+
+MOHF XBOX\extracted\shell\
+MOHF XBOX\extracted\shell\0.xsh	0,41
+MOHF XBOX\extracted\shell\1.xsh	0,41
+MOHF XBOX\extracted\shell\2.xsh	0,41
+MOHF XBOX\extracted\shell\3.xsh	0,41
+MOHF XBOX\extracted\shell\4.xsh	0,41
+MOHF XBOX\extracted\shell\5.xsh	0,41
+MOHF XBOX\extracted\shell\6.xsh	0,41
+MOHF XBOX\extracted\shell\7.xsh	0,41
+MOHF XBOX\extracted\shell\8.xsh	0,41
+MOHF XBOX\extracted\shell\9.xsh	0,41
+MOHF XBOX\extracted\shell\A_display.xsh	2,19
+MOHF XBOX\extracted\shell\A_HL.xsh	2,17
+MOHF XBOX\extracted\shell\adv_crosshairs_HL.xsh	4,17
+MOHF XBOX\extracted\shell\adv_grenadecook_HL.xsh	4,17
+MOHF XBOX\extracted\shell\adv_health_HL.xsh	4,17
+MOHF XBOX\extracted\shell\adv_inverty_HL.xsh	4,17
+MOHF XBOX\extracted\shell\adv_on_HL.xsh	2,16
+MOHF XBOX\extracted\shell\adv_radar_HL.xsh	4,17
+MOHF XBOX\extracted\shell\adv_slider.xsh	0,41
+MOHF XBOX\extracted\shell\adv_vibrate_HL.xsh	4,17
+MOHF XBOX\extracted\shell\advanced_Background.xsh	64,17
+MOHF XBOX\extracted\shell\Arial10_aliased_8bit_WesternEurope.xfn	33,58
+MOHF XBOX\extracted\shell\Audio_HL.xsh	16,16
+MOHF XBOX\extracted\shell\Audio_master.xsh	256,19
+MOHF XBOX\extracted\shell\Audio_TXT.xsh	16,16
+MOHF XBOX\extracted\shell\B_display.xsh	2,19
+MOHF XBOX\extracted\shell\B_HL.xsh	2,17
+MOHF XBOX\extracted\shell\back_arrow_HL.xsh	2,19
+MOHF XBOX\extracted\shell\BattleReport_master.xsh	256,17
+MOHF XBOX\extracted\shell\BattleReport_section.xsh	64,20
+MOHF XBOX\extracted\shell\Begin_HL.xsh	128,17
+MOHF XBOX\extracted\shell\binum.bum	1,54
+MOHF XBOX\extracted\shell\BlackSquare_onback.xsh	0,19
+MOHF XBOX\extracted\shell\BlackSquare_ontop.xsh	0,19
+MOHF XBOX\extracted\shell\Bonus_HL.xsh	2,16
+MOHF XBOX\extracted\shell\Bonus_TXT.xsh	16,16
+MOHF XBOX\extracted\shell\Bonus_X.xsh	0,69
+MOHF XBOX\extracted\shell\Briefing.SCR	0,95
+MOHF XBOX\extracted\shell\C_display.xsh	2,19
+MOHF XBOX\extracted\shell\C_HL.xsh	2,17
+MOHF XBOX\extracted\shell\can_1.xsh	16,19
+MOHF XBOX\extracted\shell\can_3.xsh	16,19
+MOHF XBOX\extracted\shell\can_6.xsh	16,19
+MOHF XBOX\extracted\shell\can_9.xsh	16,19
+MOHF XBOX\extracted\shell\can_12.xsh	16,19
+MOHF XBOX\extracted\shell\can_15.xsh	16,19
+MOHF XBOX\extracted\shell\cans_1.xsh	16,17
+MOHF XBOX\extracted\shell\cans_2.xsh	16,17
+MOHF XBOX\extracted\shell\cans_3.xsh	16,17
+MOHF XBOX\extracted\shell\cans_4.xsh	16,17
+MOHF XBOX\extracted\shell\cans_5.xsh	16,17
+MOHF XBOX\extracted\shell\cans_6.xsh	16,17
+MOHF XBOX\extracted\shell\case_wogun_1.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_3.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_5.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_7.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_9.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_12.xsh	32,19
+MOHF XBOX\extracted\shell\case_wogun_15.xsh	32,19
+MOHF XBOX\extracted\shell\characterselect_Background.xsh	64,20
+MOHF XBOX\extracted\shell\chars.bum	25,36
+MOHF XBOX\extracted\shell\checkmark_ontop.xsh	0,31
+MOHF XBOX\extracted\shell\Cir_button.xsh	2,16
+MOHF XBOX\extracted\shell\ClassicMOH_Background.xsh	64,20
+MOHF XBOX\extracted\shell\ClassicMOHPlus_Background.xsh	64,20
+MOHF XBOX\extracted\shell\Config_1.xsh	256,16
+MOHF XBOX\extracted\shell\Config_2.xsh	256,16
+MOHF XBOX\extracted\shell\Config_3.xsh	256,16
+MOHF XBOX\extracted\shell\Config_4.xsh	256,16
+MOHF XBOX\extracted\shell\Config_5.xsh	256,16
+MOHF XBOX\extracted\shell\Config_6.xsh	256,16
+MOHF XBOX\extracted\shell\Config_6a_header.xsh	16,17
+MOHF XBOX\extracted\shell\Config_6b_header.xsh	16,17
+MOHF XBOX\extracted\shell\Config_6c_header.xsh	16,17
+MOHF XBOX\extracted\shell\Config_6d_header.xsh	16,17
+MOHF XBOX\extracted\shell\Config_Choice_CM.xsh	64,17
+MOHF XBOX\extracted\shell\Config_Choice_master.xsh	256,17
+MOHF XBOX\extracted\shell\Config_Choice_MS.xsh	64,17
+MOHF XBOX\extracted\shell\ConfigCustom_master.xsh	256,17
+MOHF XBOX\extracted\shell\configFont.xfn	14,08
+MOHF XBOX\extracted\shell\configMovement.xfn	40,45
+MOHF XBOX\extracted\shell\ConfigPick_NewGame.SCR	13,84
+MOHF XBOX\extracted\shell\Contr_1.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_2.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_3.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_4.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_5.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_6.xsh	32,17
+MOHF XBOX\extracted\shell\Contr_6a.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_6b.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_6c.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_6d.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_HL.xsh	32,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_1.xsh	8,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_2.xsh	8,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_3.xsh	8,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_4.xsh	8,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_5.xsh	8,19
+MOHF XBOX\extracted\shell\Contr_knob_pos_6.xsh	8,19
+MOHF XBOX\extracted\shell\Control_master.xsh	256,19
+MOHF XBOX\extracted\shell\Controller_HL.xsh	16,17
+MOHF XBOX\extracted\shell\Controller_Main.SCR	18,10
+MOHF XBOX\extracted\shell\Controller_Tog_Off.xsh	2,19
+MOHF XBOX\extracted\shell\Controller_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\ControllerConfigs.SCR	8,62
+MOHF XBOX\extracted\shell\ControllerSelect_BLANK.xsh	64,20
+MOHF XBOX\extracted\shell\Credits_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\Cross_hair_HL.xsh	4,19
+MOHF XBOX\extracted\shell\CustomConfig01_Background.xsh	64,20
+MOHF XBOX\extracted\shell\CustomConfig02_Background.xsh	64,20
+MOHF XBOX\extracted\shell\CustomConfig03_Background.xsh	64,20
+MOHF XBOX\extracted\shell\CustomConfig04_Background.xsh	64,20
+MOHF XBOX\extracted\shell\CustomController.SCR	10,47
+MOHF XBOX\extracted\shell\CustomController.xfn	55,33
+MOHF XBOX\extracted\shell\CustomControllerLarge.xfn	159,70
+MOHF XBOX\extracted\shell\D_display.xsh	2,19
+MOHF XBOX\extracted\shell\D_HL.xsh	2,17
+MOHF XBOX\extracted\shell\debugFont.xfn	15,08
+MOHF XBOX\extracted\shell\Delete_MEM_Main.SCR	98,51
+MOHF XBOX\extracted\shell\Diff_HL.xsh	16,16
+MOHF XBOX\extracted\shell\Diff_TXT.xsh	16,16
+MOHF XBOX\extracted\shell\Difficulty_.xfn	122,70
+MOHF XBOX\extracted\shell\Difficulty_master.xsh	256,19
+MOHF XBOX\extracted\shell\DolbyD_HL.xsh	2,20
+MOHF XBOX\extracted\shell\DolbyD_knob.xsh	8,20
+MOHF XBOX\extracted\shell\DolbyDigi.xsh	2,19
+MOHF XBOX\extracted\shell\DolbyS_HL.xsh	2,20
+MOHF XBOX\extracted\shell\DolbyS_knob.xsh	8,20
+MOHF XBOX\extracted\shell\DolbySur.xsh	2,17
+MOHF XBOX\extracted\shell\DPad_blank.xsh	0,66
+MOHF XBOX\extracted\shell\DPad_Down.xsh	0,66
+MOHF XBOX\extracted\shell\DPad_DownHL.xsh	0,28
+MOHF XBOX\extracted\shell\DPad_Left.xsh	0,66
+MOHF XBOX\extracted\shell\DPad_LeftHL.xsh	0,28
+MOHF XBOX\extracted\shell\DPad_Right.xsh	0,66
+MOHF XBOX\extracted\shell\DPad_RightHL.xsh	0,30
+MOHF XBOX\extracted\shell\DPad_Up.xsh	0,66
+MOHF XBOX\extracted\shell\DPad_UpHL.xsh	0,28
+MOHF XBOX\extracted\shell\E_display.xsh	2,19
+MOHF XBOX\extracted\shell\E_HL.xsh	2,17
+MOHF XBOX\extracted\shell\EasyMelee_Background.xsh	64,20
+MOHF XBOX\extracted\shell\EasyReload_Background.xsh	64,20
+MOHF XBOX\extracted\shell\EventSystem.aem	5,71
+MOHF XBOX\extracted\shell\extras_1_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\extras_2_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\extras_3_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\extras_4_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\extras_5_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\Extras_HL.xsh	32,17
+MOHF XBOX\extracted\shell\Extras_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\F_display.xsh	2,19
+MOHF XBOX\extracted\shell\F_HL.xsh	2,17
+MOHF XBOX\extracted\shell\folder_TXT.xsh	8,17
+MOHF XBOX\extracted\shell\folder_wogun_1.xsh	256,20
+MOHF XBOX\extracted\shell\folder_wogun_7.xsh	256,20
+MOHF XBOX\extracted\shell\folder_wogun_11.xsh	256,20
+MOHF XBOX\extracted\shell\folder_wogun_15.xsh	256,20
+MOHF XBOX\extracted\shell\frags_HL.xsh	4,16
+MOHF XBOX\extracted\shell\freindlyfire_HL.xsh	4,17
+MOHF XBOX\extracted\shell\G_display.xsh	2,19
+MOHF XBOX\extracted\shell\G_HL.xsh	2,17
+MOHF XBOX\extracted\shell\Gallery_HL.xsh	16,17
+MOHF XBOX\extracted\shell\Gallery_Main.SCR	29,95
+MOHF XBOX\extracted\shell\Gallery_master.xsh	256,17
+MOHF XBOX\extracted\shell\Gallery_TXT.xsh	8,17
+MOHF XBOX\extracted\shell\Green_lights.xsh	32,19
+MOHF XBOX\extracted\shell\grenade_HL.xsh	4,19
+MOHF XBOX\extracted\shell\H_display.xsh	2,19
+MOHF XBOX\extracted\shell\H_HL.xsh	2,17
+MOHF XBOX\extracted\shell\History_HL.xsh	16,17
+MOHF XBOX\extracted\shell\History_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\hotbox.xsh	6,14
+MOHF XBOX\extracted\shell\hps_3.xsh	32,19
+MOHF XBOX\extracted\shell\hps_7.xsh	32,19
+MOHF XBOX\extracted\shell\hps_11.xsh	32,19
+MOHF XBOX\extracted\shell\hps_15.xsh	32,19
+MOHF XBOX\extracted\shell\I_display.xsh	2,19
+MOHF XBOX\extracted\shell\I_HL.xsh	2,17
+MOHF XBOX\extracted\shell\icon_3XZoomMode.xsh	2,19
+MOHF XBOX\extracted\shell\icon_AchillesHeadMode.xsh	2,20
+MOHF XBOX\extracted\shell\icon_AlliedMissionFolderIcon.xsh	2,20
+MOHF XBOX\extracted\shell\icon_BigBangBook.xsh	2,19
+MOHF XBOX\extracted\shell\icon_InvincibilityMode.xsh	2,20
+MOHF XBOX\extracted\shell\icon_InvisibleEnemyMode.xsh	2,20
+MOHF XBOX\extracted\shell\icon_NewsReelMode.xsh	2,19
+MOHF XBOX\extracted\shell\icon_OrchestrationOfWar.xsh	2,20
+MOHF XBOX\extracted\shell\icon_PerfectionistMode.xsh	2,20
+MOHF XBOX\extracted\shell\icon_reel.xsh	1,19
+MOHF XBOX\extracted\shell\icon_RubberChicken.xsh	2,19
+MOHF XBOX\extracted\shell\icon_SilverBulletMode.xsh	2,20
+MOHF XBOX\extracted\shell\icon_UnlimitedAmmo.xsh	2,19
+MOHF XBOX\extracted\shell\iconlist.ico	65,07
+MOHF XBOX\extracted\shell\Invert_HL.xsh	4,19
+MOHF XBOX\extracted\shell\J_display.xsh	2,19
+MOHF XBOX\extracted\shell\J_HL.xsh	2,17
+MOHF XBOX\extracted\shell\Journal1_1.SCR	2,15
+MOHF XBOX\extracted\shell\Journal1_2.SCR	2,32
+MOHF XBOX\extracted\shell\Journal1_3.SCR	2,21
+MOHF XBOX\extracted\shell\Journal1_4.SCR	2,04
+MOHF XBOX\extracted\shell\Journal2_1.SCR	2,32
+MOHF XBOX\extracted\shell\Journal2_2.SCR	2,15
+MOHF XBOX\extracted\shell\Journal2_3.SCR	2,15
+MOHF XBOX\extracted\shell\Journal3_1.SCR	2,15
+MOHF XBOX\extracted\shell\Journal3_2.SCR	2,15
+MOHF XBOX\extracted\shell\Journal3_3.SCR	2,15
+MOHF XBOX\extracted\shell\Journal4_1.SCR	2,15
+MOHF XBOX\extracted\shell\Journal4_2.SCR	2,15
+MOHF XBOX\extracted\shell\Journal4_3.SCR	2,15
+MOHF XBOX\extracted\shell\Journal5_1.SCR	2,15
+MOHF XBOX\extracted\shell\Journal5_2.SCR	2,15
+MOHF XBOX\extracted\shell\Journal5_3.SCR	2,15
+MOHF XBOX\extracted\shell\Journal5_4.SCR	2,15
+MOHF XBOX\extracted\shell\K_display.xsh	2,19
+MOHF XBOX\extracted\shell\K_HL.xsh	2,17
+MOHF XBOX\extracted\shell\L_display.xsh	2,19
+MOHF XBOX\extracted\shell\L_HL.xsh	2,17
+MOHF XBOX\extracted\shell\LevelSelect_master.xsh	256,17
+MOHF XBOX\extracted\shell\levelset_01.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_02.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_03.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_04.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_05.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_06.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_07.xsh	128,16
+MOHF XBOX\extracted\shell\levelset_08.xsh	128,16
+MOHF XBOX\extracted\shell\LevelWeapon.xfn	28,33
+MOHF XBOX\extracted\shell\Light_1.xsh	32,19
+MOHF XBOX\extracted\shell\Light_2.xsh	32,19
+MOHF XBOX\extracted\shell\Light_3.xsh	32,19
+MOHF XBOX\extracted\shell\Light_4.xsh	32,19
+MOHF XBOX\extracted\shell\Light_5.xsh	32,19
+MOHF XBOX\extracted\shell\Light_6.xsh	32,19
+MOHF XBOX\extracted\shell\Light_7.xsh	32,19
+MOHF XBOX\extracted\shell\Light_8.xsh	32,19
+MOHF XBOX\extracted\shell\Light_9.xsh	32,19
+MOHF XBOX\extracted\shell\Light_10.xsh	32,19
+MOHF XBOX\extracted\shell\light_HL.xsh	0,30
+MOHF XBOX\extracted\shell\Load_master.xsh	256,20
+MOHF XBOX\extracted\shell\Load_MEM_Main.SCR	103,97
+MOHF XBOX\extracted\shell\Logo_walpha.xsh	32,17
+MOHF XBOX\extracted\shell\M_display.xsh	2,19
+MOHF XBOX\extracted\shell\M_HL.xsh	2,17
+MOHF XBOX\extracted\shell\Main_master.xsh	256,17
+MOHF XBOX\extracted\shell\MainScr_note.xsh	32,17
+MOHF XBOX\extracted\shell\Making_HL.xsh	8,17
+MOHF XBOX\extracted\shell\Making_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\map_HL.xsh	4,16
+MOHF XBOX\extracted\shell\Master_Main.SCR	29,67
+MOHF XBOX\extracted\shell\Medals.xfn	96,95
+MOHF XBOX\extracted\shell\Medals_01.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_02.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_03.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_04.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_05.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_06.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_07a.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_07b.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_08.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_09.xsh	16,20
+MOHF XBOX\extracted\shell\Medals_master.xsh	256,20
+MOHF XBOX\extracted\shell\memorycardFont.xfn	56,95
+MOHF XBOX\extracted\shell\miniM_1.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_1_HL.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_2.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_2_HL.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_3.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_3_HL.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_4.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_4_HL.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_5.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_5_HL.xsh	1,19
+MOHF XBOX\extracted\shell\miniM_6.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_6_HL.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_7a.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_7a_HL.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_7b.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_7b_HL.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_8.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_8_HL.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_9.xsh	2,19
+MOHF XBOX\extracted\shell\miniM_9_HL.xsh	2,19
+MOHF XBOX\extracted\shell\mission_1_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\mission_2_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\mission_3_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\mission_4_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\mission_5_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\mission_6_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\Mission_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\MissionLog.SCR	105,50
+MOHF XBOX\extracted\shell\MissionLog_master.xsh	256,19
+MOHF XBOX\extracted\shell\MissionLogFont.xfn	55,33
+MOHF XBOX\extracted\shell\MissionLogMsnName.xfn	66,95
+MOHF XBOX\extracted\shell\MissionLogRatingInfo.xfn	28,58
+MOHF XBOX\extracted\shell\Model01.xsh	16,19
+MOHF XBOX\extracted\shell\Model02.xsh	16,19
+MOHF XBOX\extracted\shell\Model03.xsh	16,19
+MOHF XBOX\extracted\shell\Model04.xsh	16,19
+MOHF XBOX\extracted\shell\Model05.xsh	16,19
+MOHF XBOX\extracted\shell\Model06.xsh	16,19
+MOHF XBOX\extracted\shell\Model07.xsh	16,19
+MOHF XBOX\extracted\shell\Model08.xsh	16,19
+MOHF XBOX\extracted\shell\Model09.xsh	16,19
+MOHF XBOX\extracted\shell\Model10.xsh	16,19
+MOHF XBOX\extracted\shell\Model11.xsh	16,19
+MOHF XBOX\extracted\shell\Model12.xsh	16,19
+MOHF XBOX\extracted\shell\Model13.xsh	16,19
+MOHF XBOX\extracted\shell\Model14.xsh	16,19
+MOHF XBOX\extracted\shell\Model15.xsh	16,19
+MOHF XBOX\extracted\shell\Model16.xsh	16,19
+MOHF XBOX\extracted\shell\Model17.xsh	16,19
+MOHF XBOX\extracted\shell\Model18.xsh	16,19
+MOHF XBOX\extracted\shell\Model19.xsh	16,19
+MOHF XBOX\extracted\shell\Model20.xsh	16,19
+MOHF XBOX\extracted\shell\Model21.xsh	16,19
+MOHF XBOX\extracted\shell\Model22.xsh	16,19
+MOHF XBOX\extracted\shell\Model23.xsh	16,19
+MOHF XBOX\extracted\shell\Model24.xsh	16,19
+MOHF XBOX\extracted\shell\Model25.xsh	16,19
+MOHF XBOX\extracted\shell\Model26.xsh	16,19
+MOHF XBOX\extracted\shell\Model27.xsh	16,19
+MOHF XBOX\extracted\shell\Model28.xsh	16,19
+MOHF XBOX\extracted\shell\Model29.xsh	16,19
+MOHF XBOX\extracted\shell\Model30.xsh	16,19
+MOHF XBOX\extracted\shell\MOHSharpshooter_Background.xsh	64,20
+MOHF XBOX\extracted\shell\mono.xsh	2,17
+MOHF XBOX\extracted\shell\Mono_HL.xsh	2,20
+MOHF XBOX\extracted\shell\Mono_knob.xsh	8,20
+MOHF XBOX\extracted\shell\MP_1.xsh	32,16
+MOHF XBOX\extracted\shell\MP_2.xsh	32,16
+MOHF XBOX\extracted\shell\MP_3.xsh	32,16
+MOHF XBOX\extracted\shell\MP_4.xsh	32,16
+MOHF XBOX\extracted\shell\MP_BattleReport.SCR	37,15
+MOHF XBOX\extracted\shell\MP_HL.xsh	32,17
+MOHF XBOX\extracted\shell\MP_WeapLvlSets.SCR	28,06
+MOHF XBOX\extracted\shell\Multiplayer_Main.SCR	166,46
+MOHF XBOX\extracted\shell\multiplayer_TXT.xsh	8,19
+MOHF XBOX\extracted\shell\MultiQuarterScr.xfn	29,08
+MOHF XBOX\extracted\shell\Music_HL.xsh	2,19
+MOHF XBOX\extracted\shell\Music_knob_pos_1.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_2.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_3.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_4.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_5.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_6.xsh	8,19
+MOHF XBOX\extracted\shell\Music_knob_pos_7.xsh	8,19
+MOHF XBOX\extracted\shell\musmp_HL.xsh	4,16
+MOHF XBOX\extracted\shell\N_display.xsh	2,19
+MOHF XBOX\extracted\shell\N_HL.xsh	2,17
+MOHF XBOX\extracted\shell\Next_Mission_TXT.xsh	8,19
+MOHF XBOX\extracted\shell\O_display.xsh	2,19
+MOHF XBOX\extracted\shell\O_HL.xsh	2,17
+MOHF XBOX\extracted\shell\opt_Audio_Main.SCR	13,63
+MOHF XBOX\extracted\shell\opt_Difficulty.SCR	13,38
+MOHF XBOX\extracted\shell\opt_Password_Main.SCR	57,29
+MOHF XBOX\extracted\shell\opt_SecretCodes.SCR	21,15
+MOHF XBOX\extracted\shell\Options_HL.xsh	32,17
+MOHF XBOX\extracted\shell\Options_Main.SCR	14,66
+MOHF XBOX\extracted\shell\Options_master.xsh	256,17
+MOHF XBOX\extracted\shell\Options_TXT.xsh	8,17
+MOHF XBOX\extracted\shell\P_display.xsh	2,19
+MOHF XBOX\extracted\shell\P_HL.xsh	2,17
+MOHF XBOX\extracted\shell\Password_HL.xsh	32,16
+MOHF XBOX\extracted\shell\Password_master.xsh	256,19
+MOHF XBOX\extracted\shell\Password_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\Perf_Eval_master.xsh	256,22
+MOHF XBOX\extracted\shell\PerformanceEvaluation.SCR	22,06
+MOHF XBOX\extracted\shell\Personal_Recs_master.xsh	256,19
+MOHF XBOX\extracted\shell\Personal_Recs_TXT.xsh	8,19
+MOHF XBOX\extracted\shell\PersonalRecords_Main.SCR	14,21
+MOHF XBOX\extracted\shell\pistol_1.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_2.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_4.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_6.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_11.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_13.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_15.xsh	16,19
+MOHF XBOX\extracted\shell\pistol_HL.xsh	16,17
+MOHF XBOX\extracted\shell\play_HL.xsh	4,16
+MOHF XBOX\extracted\shell\Player_stats_award.xsh	32,22
+MOHF XBOX\extracted\shell\player_stats_master.xsh	256,22
+MOHF XBOX\extracted\shell\PlayerJoin_background.xsh	64,20
+MOHF XBOX\extracted\shell\PlayerStatsFont.xfn	34,33
+MOHF XBOX\extracted\shell\PopupDisplay.xfn	27,33
+MOHF XBOX\extracted\shell\PR_HL.xsh	32,17
+MOHF XBOX\extracted\shell\PR_Medal_HL.xsh	64,19
+MOHF XBOX\extracted\shell\PR_Medals.SCR	28,48
+MOHF XBOX\extracted\shell\PR_PlayerStats.SCR	16,33
+MOHF XBOX\extracted\shell\PR_Stat_HL.xsh	32,19
+MOHF XBOX\extracted\shell\Q_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\Q_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\R_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\R_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\Red_lights copy.xsh	32,19
+MOHF XBOX\extracted\shell\reels_1.xsh	64,19
+MOHF XBOX\extracted\shell\reels_2.xsh	64,19
+MOHF XBOX\extracted\shell\reels_3.xsh	64,19
+MOHF XBOX\extracted\shell\reels_4.xsh	64,19
+MOHF XBOX\extracted\shell\reels_5.xsh	64,19
+MOHF XBOX\extracted\shell\reels_6.xsh	64,19
+MOHF XBOX\extracted\shell\reels_7.xsh	64,19
+MOHF XBOX\extracted\shell\reels_8.xsh	64,19
+MOHF XBOX\extracted\shell\RewardMovie.SCR	0,53
+MOHF XBOX\extracted\shell\Ribbon01.xsh	1,19
+MOHF XBOX\extracted\shell\Ribbon02.xsh	1,19
+MOHF XBOX\extracted\shell\Ribbon03.xsh	1,19
+MOHF XBOX\extracted\shell\Ribbon04.xsh	1,19
+MOHF XBOX\extracted\shell\Ribbon05.xsh	1,19
+MOHF XBOX\extracted\shell\Ribbon06.xsh	1,19
+MOHF XBOX\extracted\shell\S_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\S_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\Save_Main.SCR	56,24
+MOHF XBOX\extracted\shell\Save_master.xsh	256,20
+MOHF XBOX\extracted\shell\Save_MEM_Main.SCR	123,24
+MOHF XBOX\extracted\shell\SaveContinueReplay.SCR	24,13
+MOHF XBOX\extracted\shell\SaveContReplay.xfn	43,58
+MOHF XBOX\extracted\shell\saveimage.xbx	4,00
+MOHF XBOX\extracted\shell\SaveLoadFont.xfn	55,33
+MOHF XBOX\extracted\shell\scroll_bar_bar.xsh	4,20
+MOHF XBOX\extracted\shell\scroll_bar_box.xsh	0,70
+MOHF XBOX\extracted\shell\secretcodes_master.xsh	256,20
+MOHF XBOX\extracted\shell\SecretCodesFont_Garamond18.xfn	66,95
+MOHF XBOX\extracted\shell\Send_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\sfx_HL.xsh	2,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_1.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_2.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_3.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_4.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_5.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_6.xsh	8,19
+MOHF XBOX\extracted\shell\sfx_knob_pos_7.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_1.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_2.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_3.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_4.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_5.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_6.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_7.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_8.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_9.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_10.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_11.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_12.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_13.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_14.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_15.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_16.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_17.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_18.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_19.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_20.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_21.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_22.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_23.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_24.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_25.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_26.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_27.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_28.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_29.xsh	8,19
+MOHF XBOX\extracted\shell\smoke_30.xsh	8,19
+MOHF XBOX\extracted\shell\Squ_button.xsh	2,16
+MOHF XBOX\extracted\shell\Star_bronze.xsh	2,19
+MOHF XBOX\extracted\shell\Star_gold.xsh	2,19
+MOHF XBOX\extracted\shell\Star_silver.xsh	2,19
+MOHF XBOX\extracted\shell\Stereo.xsh	2,17
+MOHF XBOX\extracted\shell\Stereo_HL.xsh	2,20
+MOHF XBOX\extracted\shell\Stereo_knob.xsh	8,20
+MOHF XBOX\extracted\shell\Subtitle.SCR	3,23
+MOHF XBOX\extracted\shell\subtitle_HL.xsh	16,16
+MOHF XBOX\extracted\shell\subtitle_radio_closeup_master.xsh	256,20
+MOHF XBOX\extracted\shell\subtitle_TXT.xsh	16,17
+MOHF XBOX\extracted\shell\SubtitlesSwitch_OFF.xsh	8,19
+MOHF XBOX\extracted\shell\SubtitlesSwitch_ON.xsh	8,19
+MOHF XBOX\extracted\shell\T_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\T_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\time_HL.xsh	4,16
+MOHF XBOX\extracted\shell\Tri_button.xsh	2,16
+MOHF XBOX\extracted\shell\U_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\U_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\unplugged.xsh	64,16
+MOHF XBOX\extracted\shell\unpluggedFont.xfn	41,95
+MOHF XBOX\extracted\shell\V_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\V_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\Vibrate_off.xsh	8,19
+MOHF XBOX\extracted\shell\Vibrate_off_HL.xsh	8,19
+MOHF XBOX\extracted\shell\Vibrate_on.xsh	8,19
+MOHF XBOX\extracted\shell\Vibrate_on_HL.xsh	8,19
+MOHF XBOX\extracted\shell\vssver.scc	7,92
+MOHF XBOX\extracted\shell\W_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\W_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\weaponset_01.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_02.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_03.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_04.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_05.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_06.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_07.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_08.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_09.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_10.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_11.xsh	32,17
+MOHF XBOX\extracted\shell\weaponset_HL.xsh	4,17
+MOHF XBOX\extracted\shell\X_button.xsh	2,16
+MOHF XBOX\extracted\shell\X_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\X_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\Y_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\Y_HL copy.xsh	2,19
+MOHF XBOX\extracted\shell\Z_display copy.xsh	2,19
+MOHF XBOX\extracted\shell\Z_HL copy.xsh	2,19
+
