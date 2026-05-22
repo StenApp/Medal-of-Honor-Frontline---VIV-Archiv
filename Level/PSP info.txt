@@ -1,0 +1,7 @@
+PSP — Fazit
+Die PSP ist ein rekursiver Portal-BSP-Baum (PBSP_HEADER). Struktur eines Knotens (16 Bytes):
+float  split_value     // Schnittebene (Koordinate)
+u32    right_child     // Dateioffset rechter Kindknoten (0xFE967699 = kein Kind)
+u32    left_child      // Dateioffset linker Kindknoten oder Blattdaten
+u32    flags           // 0x0101 = Blatt folgt, 0x00400000 = Wurzel
+6 Partitionsebenen als Kette ab 0x28, jede mit einem eigenen Teilbaum. Die Blätter enthalten Polygon/Sektor-Indexlisten die auf den BPD-Indexbuffer verweisen.

@@ -1,0 +1,16 @@
+PSP ist ein Xbox Runtime-Dump — die Datei wurde direkt aus dem Arbeitsspeicher gespeichert. Die Pointer 0x0040c5d8, 0x0040c071 sind Xbox-Runtime-Adressen (Basis 0x00400000), nicht File-Offsets. Das bedeutet:
+Struktur:
+
+Header: PBSP_HEADER\x00 (12 B) + 3 Runtime-Pointer + Stack-Adresse
+Ab +0x28: BSP-Node-Array, Stride 16 Bytes pro Node
+
+float — Split-Plane-Wert (19.9, 69.3, -13.4, 38.7…) — das sind World-Space-Koordinaten
+uint32 — Offset zum nächsten Node (linear aufsteigend: 0x38, 0x48, 0x58…)
+uint32 — Count/Flags
+uint32 — Runtime-Pointer (0 wenn Leaf)
+
+
+Ab ca. Node 8: float=0, dann dichte uint16-Paare — das ist der Index-Buffer (Polygon-Indizes, die aus dem BSP-Baum referenziert werden)
+Letzte Bytes: ff ff = Strip-Restart-Marker — bestätigt uint16 Triangle Strips, identisch zu MSH
+
+Fazit für die Geo-Frage: PSP enthält den BSP-Baum + Index-Buffer für Kollision/Physics. Die eigentliche Render-Geometrie mit Vertices und UVs steckt im BPD, nicht im PSP. PSP allein reicht nicht — du brauchst BPD für die visuelle Geo.

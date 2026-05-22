@@ -1,0 +1,16 @@
+Befund: chars.bum und binum.bum — MOHF Xbox
+chars.bum — String-Tabelle (772 Einträge, 26 KB)
+Klare Struktur in den ersten 126 Einträgen (nur diese werden von binum.bum referenziert):
+IndexInhalt0–4Can we delete this — 5× Platzhalter/Padding5–7Door-Nachrichten8–17Genric Objective 01–10 — laufende Objectives (Typo original)18–27Generic Objective 01–10 Complete — abgeschlossene Objectives28–125Echte Missions-Objectives + Completion-Strings, paarweise angeordnet
+Strings ab 126 (HQ-Hinweise, Waffennamen, Level-/Datumsnamen, UI-Strings, PS2-Memory-Card-Texte) werden von binum.bum nicht referenziert — die gehören zu einem anderen System.
+
+binum.bum — Objective-State-Tabelle (789 Byte-Paare)
+Struktur pro Eintrag: (byte1, byte2) = (slot/typ, string_index)
+byte1 hat nur 5 mögliche Werte:
+
+1, 2, 3, 4 → wahrscheinlich 4 Objective-Slots (MOHF zeigt max. 4 Objectives gleichzeitig auf dem HUD)
+20 → einmaliger Sentinel am Anfang (zeigt auf Can we delete this)
+
+byte2 = Index in chars.bum (bestätigt, max. 125)
+Die Daten sind nicht sauber nach Leveln geblockt — M1- und M2-Strings wechseln sich unstrukturiert ab. Das deutet darauf hin, dass binum.bum kein Level-Array ist, sondern eher eine Zustandsmaschinen-Lookup-Tabelle: vermutlich eine sortierte oder indizierte Tabelle, die für jeden möglichen Objective-Zustand festlegt, welcher String in welchem Slot erscheinen soll.
+Die 789 Einträge bei 4 aktiven Slots lässt sich schwer sauber aufteilen (789/4 = 197,25). Es könnte sein, dass die Datei noch einen Header oder eine Längenangabe hat, die anderswo gespeichert ist, oder dass type=20 + Can we delete this als Null-Terminator/Länge fungiert und die echten Daten bei Entry 1 beginnen (788 = 4 × 197 — auch nicht glatt).
