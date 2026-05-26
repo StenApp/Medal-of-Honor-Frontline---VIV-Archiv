@@ -3,12 +3,39 @@
 //
 //      File: mohf_cpt.bt
 //   Authors: Sten
-//   Version: 0.1.0
+//   Version: 0.4.0
 //   Purpose: Medal of Honor Frontline - CPT Compiled Texture File
 //  Category: Game
 // File Mask: *.cpt
 //  ID Bytes: 12 00 00 00
 //   History:
+//     0.4.0  2026-05-25  All 4 unknown sections identified:
+//                        [0x1C/0x20] off=0xF9640  cnt=1338 = Texture instance index table
+//                          (runtime-patched absolute file pointers, engine-internal)
+//                        [0x24/0x28] off=0x100B00 cnt=179  = Extended planar projection params
+//                          (per texture group: 2D rotation matrix pairs + world positions;
+//                           stride varies; cnt > SHPX count due to multi-instance textures)
+//                        [0x2C/0x30] off=0x172EE0 cnt=71   = Pointer array / TOC
+//                          (uint32 file offsets, possibly SHPX or MatSet cross-references)
+//                        [0x4C/0x50] off=0x160010 cnt=536  = PAL8 pixel data / mip thumbnails
+//                          (uniform-color 8×8 or similar tiles, likely LOD mip data)
+//                        None of these are needed for offline rendering.
+//     0.3.0  2026-05-25  MatSet entry format decoded (stride=128B, identical to MSH MaterialTable):
+//                        [+14] TextureCount=2, [+18] NameHashA, [+1C] NameHashB,
+//                        [+20] PixelDataPtr=0x80 (constant = SHPX header size),
+//                        [+24] PalettePtr = 0x80 + W×H + 0x40 (SHPX-relative),
+//                        [+28] RenderFlags=0x00040001, [+34] HashA, [+3C] RenderFlags2,
+//                        [+64] Width, [+68] Height, [+6C] MipCount, [+74] Format=3(PAL8).
+//                        MatSet entries correspond 1:1 to embedded SHPX textures (after null entries).
+//                        PalettePtr formula verified for: 64×64, 128×64, 128×128, 256×256.
+//     0.2.0  2026-05-25  CPT gap decoded: rendering instance data (planar projection).
+//                        Gap 0x80..FirstSHPX: 28B entries = runtime pointer + 0xFFDCDCDC marker
+//                        + float2 UV rotation matrix (cos,sin) + float3 world origin (XYZ).
+//                        These are planar texture projection parameters used by the engine at
+//                        load time to patch runtime pointers. NOT needed for offline rendering
+//                        (BPD SubMesh nearest-centroid gives diffuse texture per polygon).
+//                        Header decoded: version=18, filesize, MatSetCount=2,
+//                        MatSet0 (off,cnt=146), MatSet1 (off,cnt=26), several more offset/count pairs.
 //     0.1.0  2026-05-23  Initial - full header + MaterialSet entry structure decoded.
 //                        SHPX block location at entry+0x70 confirmed.
 //                        TextureWidth at +0x64, Height at +0x68 (differs from BMS script).
@@ -34,7 +61,14 @@
 //    0x00         CPT_HEADER (28 bytes + padding to MatSet0Offset)
 //    MatSet0Off   CPT_MATSET_ENTRY[MatSet0Count]  (128 bytes each)
 //    MatSet1Off   CPT_MATSET_ENTRY[MatSet1Count]  (128 bytes each)
-//    (variable)   Index/spatial data (~50 KB gap, structure TBD)
+//    (variable)   Rendering instance data: 28B entries per texture instance:
+//                  [+00] uint32  RuntimePtr  = patched at load, references BSP node
+//                  [+04] uint32  Marker      = 0xFFDCDCDC (always)
+//                  [+08] float   UVcos       = cos(projection_angle) for planar U
+//                  [+0C] float   UVsin       = sin(projection_angle) for planar V
+//                  [+10] float   OriginX     = world-space projection origin X
+//                  [+14] float   OriginY     = world-space projection origin Y
+//                  [+18] float   OriginZ     = world-space projection origin Z
 //    (variable)   SHPX blocks, sequential, no explicit offset table
 //    EOF
 //
@@ -57,13 +91,13 @@ string ReadMagic4(Magic4& m) {
 
 typedef struct {
     uint32  Sign            <format=hex, comment="= 0x12 (18)">;
-    uint32  ResourceSize    <comment="Total file size in bytes">;
-    uint32  Unknown_0       <comment="= 0x02">;
+    uint32  ResourceSize    ;  // Total file size in bytes
+    uint32  Unknown_0       ;  // = 0x02
     uint32  MatSet0Offset   <format=hex, comment="Absolute offset to MaterialSet0 entry table">;
-    uint32  MatSet0Count    <comment="Number of MaterialSet0 entries">;
+    uint32  MatSet0Count    ;  // Number of MaterialSet0 entries
     uint32  MatSet1Offset   <format=hex, comment="Absolute offset to MaterialSet1 entry table">;
-    uint32  MatSet1Count    <comment="Number of MaterialSet1 entries">;
-} CPT_HEADER <comment="CPT file header">;
+    uint32  MatSet1Count    ;  // Number of MaterialSet1 entries
+} CPT_HEADER ;  // CPT file header
 
 CPT_HEADER Header;
 
@@ -71,12 +105,12 @@ CPT_HEADER Header;
 //
 //  Key decoded fields:
 //    +0x00..0x13  Null padding (20 bytes)
-//    +0x14        Unknown_0 (uint32, often 0x02)
+//    +0x14        InstanceCount  (uint32) = number of planar projection instances for this texture
 //    +0x18        TextureHash? (uint32, often unique per texture)
-//    +0x1C        Unknown_2
+//    +0x1C        Flags/Blend     (uint32) = render blend mode flags
 //    +0x20        RawDataOffset  - absolute file offset to pixel data (within SHPX block)
 //    +0x24        PaletteDataOffset - absolute file offset to palette data (within SHPX block)
-//    +0x28..0x2B  Unknown_3 (packed: low16 = flags?, high16 = ?)
+//    +0x28..0x2B  TexDimPacked    (uint32) = low16=width, high16=height (packed dimensions)
 //    +0x2C..0x2F  Unknown_4
 //    +0x30..0x33  Unknown_5
 //    +0x34        PixelFormat (ubyte, same as SHPX +0x70: 123=PAL8, 125=BGRA8888)
@@ -93,7 +127,7 @@ CPT_HEADER Header;
 //    +0x7C        ExternalTextureId (uint32, 0 = embedded in this CPT)
 
 typedef struct {
-    byte    Null[20]            <comment="Padding">;
+    byte    Null[20]            ;  // Padding
     uint32  Unknown_0;
     uint32  TextureHash         <format=hex, comment="Texture identifier hash">;
     uint32  Unknown_2;
@@ -102,7 +136,7 @@ typedef struct {
     uint32  Unknown_3           <format=hex>;
     uint32  Unknown_4           <format=hex>;
     uint32  Unknown_5           <format=hex>;
-    ubyte   PixelFormat         <comment="Same as SHPX +0x70: 123=PAL8+swizzle, 125=BGRA8888+swizzle">;
+    ubyte   PixelFormat         ;  // Same as SHPX +0x70: 123=PAL8+swizzle, 125=BGRA8888+swizzle
     ubyte   FormatFlag1;
     ubyte   FormatFlag2;
     ubyte   FormatFlag3;
@@ -117,25 +151,20 @@ typedef struct {
     uint32  Unknown_18;
     uint32  Unknown_19;
     uint32  Unknown_20;
-    uint32  Unknown_mip1        <comment="Usually 1">;
-    uint32  Unknown_mip2        <comment="Usually 1">;
-    uint32  TextureWidth        <comment="Display width in pixels">;
-    uint32  TextureHeight       <comment="= RawDataOffset for simple unmipmapped entries; actual height from SHPX header">;
-    uint32  MipCount            <comment="Number of mip levels (usually 3)">;
-    uint32  HeaderOffset        <format=hex, comment="Abs offset to SHPX block. 0 = no embedded texture (external)">;
-    uint32  Unknown_22;
-    uint32  Unknown_23;
-    uint32  ExternalTextureId   <comment="0 = texture embedded in this CPT; >0 = external texture index">;
+    uint32  TextureWidth        ;  // Width in pixels
+    uint32  TextureHeight       ;  // Height in pixels
+    uint32  MipCount            ;  // Number of mip levels
+    uint32  HeaderOffset        <format=hex>;  // Abs offset to SHPX block (0=external)
+    uint32  Unknown_21          ;
+    uint32  ExternalTextureId   ;  // 0=embedded >0=external texture index
 } CPT_MATSET_ENTRY <read=ReadMatSetEntry, size=128>;
 
 string ReadMatSetEntry(CPT_MATSET_ENTRY& e) {
     string s;
     if (e.HeaderOffset > 0) {
-        SPrintf(s, "SHPX@0x%06X fmt=%d %dx%d",
-                e.HeaderOffset, e.PixelFormat, e.TextureWidth, e.MipCount);
+        SPrintf(s, "SHPX@0x%06X fmt=%d %dx%d mips=%d", e.HeaderOffset, e.PixelFormat, e.TextureWidth, e.TextureHeight, e.MipCount);
     } else if (e.TextureWidth > 0) {
-        SPrintf(s, "external id=%d  %dx%d fmt=%d",
-                e.ExternalTextureId, e.TextureWidth, e.MipCount, e.PixelFormat);
+        SPrintf(s, "ext id=%d  %dx%d fmt=%d", e.ExternalTextureId, e.TextureWidth, e.TextureHeight, e.PixelFormat);
     } else {
         s = "(null entry)";
     }
@@ -148,7 +177,7 @@ FSeek(Header.MatSet0Offset);
 
 typedef struct {
     CPT_MATSET_ENTRY Entries[Header.MatSet0Count];
-} MATERIALSET_0 <comment="Primary material set">;
+} MATERIALSET_0 ;  // Primary material set
 
 MATERIALSET_0 MatSet0;
 
@@ -158,7 +187,7 @@ FSeek(Header.MatSet1Offset);
 
 typedef struct {
     CPT_MATSET_ENTRY Entries[Header.MatSet1Count];
-} MATERIALSET_1 <comment="Secondary material set (detail/overlay textures)">;
+} MATERIALSET_1 ;  // Secondary material set (detail/overlay textures)
 
 MATERIALSET_1 MatSet1;
 

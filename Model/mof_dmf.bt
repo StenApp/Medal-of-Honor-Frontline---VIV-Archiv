@@ -1,0 +1,203 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mof_dmf.bt
+//   Authors: Sten
+//   Version: 1.0.0
+//   Purpose: Medal of Honor Frontline - DMF Skinned Mesh
+//  Category: Game
+// File Mask: *.dmf
+//  ID Bytes: 44 4D 46 00
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//   Header:
+//     [+0x00] Magic      'DMF\0'
+//     [+0x04] Version    = 6
+//     [+0x20] SkinCount  uint32 = number of skin entries
+//     [+0x24] SkinOff    uint32 = abs offset to skin entry table
+//     [+0x48] BoneRefCount uint32
+//     [+0x4C] BoneRefOff   uint32 = abs offset to bone ref table
+//
+//   BoneRef table (BoneRefCount × 16B):
+//     char[16] bone_name → maps to SKL BoneNames[N] (1:1)
+//
+//   Skin entry table (SkinCount × 4B):
+//     byte BoneA  = primary bone (DMF bone index)
+//     byte BoneB  = secondary bone
+//     byte Blend  = blend weight (0..255, BoneA weight = Blend/255)
+//     byte Flags  = group/LOD flags
+//
+//   After skin table: null padding then block offset table.
+//
+//   Two variants:
+//   BM01-style: 6 null DWORDs → direct block offset table
+//     NumBlocks = (first_block_off - table_start) / 4
+//   BM02-style: 5 null DWORDs → ptr → linked block chain
+//     Each block: after UVBuf skip 8B padding, then uint32 ptr to next block
+//
+//   MeshBlock (per block):
+//     [+0x00] BoneIdxCnt  uint32 (1, 8, or 16)
+//     [+0x04] BoneIdxOff  uint32 (abs, == mb+0x14 inline table)
+//     [+0x08] VtxCount    uint32
+//     [+0x0C] VtxBufBase  uint32 → VtxBuf = VtxBufBase + 12
+//     [+0x10] UVBufBase   uint32 → UVBuf  = UVBufBase  + 12
+//     [+0x14] BoneIdxTable uint8[BoneIdxCnt]
+//       BoneIdxTable[local_slot] = SkinEntry global index
+//
+//   VtxBuf (VtxCount × 24B):
+//     float3 XYZ (12B) + float3 Normal (12B)
+//
+//   UVBuf (VtxCount × 12B):
+//     float U + float V + float skin_group_idx
+//
+//   Skinning (bind-pose round-trip verified, max error 4.48e-16):
+//     v_local = conj(world_Q) * (v - world_T)
+//     v_world = world_Q * v_local + world_T
+//
+//   Bind-pose NaN fix: SKL T/Q may contain runtime pointer residuals.
+//     safe_float(v, clamp=10.0): treat |v|>10 or NaN/Inf as 0.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Typedefs ──────────────────────────────────────────────────────────────────
+
+typedef struct {
+    char Name[16];
+} DMF_BONE_REF <size=16, read=ReadBR>;
+string ReadBR(DMF_BONE_REF& b) { return b.Name; }
+
+typedef struct {
+    ubyte BoneA;
+    ubyte BoneB;
+    ubyte Blend;
+    ubyte Flags;
+} DMF_SKIN_ENTRY <size=4, read=ReadSE>;
+string ReadSE(DMF_SKIN_ENTRY& e) {
+    string s;
+    SPrintf(s, "A=%d B=%d blend=%d flags=%d", e.BoneA, e.BoneB, e.Blend, e.Flags);
+    return s;
+}
+
+typedef struct {
+    float X; float Y; float Z;
+    float NX; float NY; float NZ;
+} DMF_VERTEX <size=24, read=ReadVtx>;
+string ReadVtx(DMF_VERTEX& v) {
+    string s;
+    SPrintf(s, "(%.3f,%.3f,%.3f) N=(%.3f,%.3f,%.3f)", v.X, v.Y, v.Z, v.NX, v.NY, v.NZ);
+    return s;
+}
+
+typedef struct {
+    float U; float V; float SkinGroupIdx;
+} DMF_UV <size=12, read=ReadUV>;
+string ReadUV(DMF_UV& u) {
+    string s;
+    SPrintf(s, "uv=(%.3f,%.3f) sg=%.0f", u.U, u.V, u.SkinGroupIdx);
+    return s;
+}
+
+typedef struct {
+    uint32 BoneIdxCnt;
+    uint32 BoneIdxOff  <format=hex>;
+    uint32 VtxCount;
+    uint32 VtxBufBase  <format=hex>;
+    uint32 UVBufBase   <format=hex>;
+    ubyte  BoneIdxTable[BoneIdxCnt];
+} DMF_MESHBLOCK <read=ReadMB>;
+string ReadMB(DMF_MESHBLOCK& b) {
+    string s;
+    SPrintf(s, "vc=%d boneSlots=%d vtxBuf=0x%X", b.VtxCount, b.BoneIdxCnt, b.VtxBufBase+12);
+    return s;
+}
+
+// ── Parse ─────────────────────────────────────────────────────────────────────
+
+local uint32 skinCount   = ReadUInt(0x20);
+local uint32 skinOff     = ReadUInt(0x24);
+local uint32 boneRefCnt  = ReadUInt(0x48);
+local uint32 boneRefOff  = ReadUInt(0x4C);
+
+// Header
+FSeek(0);
+uint32 Magic    <format=hex>;
+uint32 Version;
+byte   HdrRest[56];
+
+Printf("=== DMF ===\n");
+Printf("SkinCount:    %d\n", skinCount);
+Printf("BoneRefCount: %d\n", boneRefCnt);
+
+// BoneRef table
+FSeek(boneRefOff);
+DMF_BONE_REF BoneRefs[boneRefCnt];
+
+// Skin entry table
+FSeek(skinOff);
+DMF_SKIN_ENTRY SkinEntries[skinCount];
+
+// Find block offset table
+local uint32 skinEnd   = skinOff + skinCount * 4;
+local uint32 pos       = skinEnd;
+local uint32 firstBlock = 0;
+local uint32 numBlocks  = 0;
+local int    bi         = 0;
+local uint32 boff       = 0;
+local uint32 vtxBuf     = 0;
+local uint32 uvBuf      = 0;
+local uint32 blockOff   = 0;
+local uint32 vtxBuf2    = 0;
+local uint32 uvBuf2     = 0;
+local uint32 uvEnd      = 0;
+local uint32 npos       = 0;
+
+while (pos < skinEnd + 200 && ReadUInt(pos) == 0) pos += 4;
+firstBlock = ReadUInt(pos);
+
+if (firstBlock > pos) {
+    // BM01-style: direct offset table
+    numBlocks = (firstBlock - pos) / 4;
+    Printf("Style: BM01  blocks=%d\n", numBlocks);
+    FSeek(pos);
+    uint32 BlockOffsets[numBlocks] <format=hex>;
+
+    for (bi = 0; bi < (int)numBlocks && bi < 3; bi++) {
+        boff   = BlockOffsets[bi];
+        FSeek(boff);
+        DMF_MESHBLOCK MeshBlock;
+        vtxBuf = MeshBlock.VtxBufBase + 12;
+        uvBuf  = MeshBlock.UVBufBase  + 12;
+        FSeek(vtxBuf);
+        struct VTX_SAMPLE { DMF_VERTEX Verts[3]; } VtxSample;
+        FSeek(uvBuf);
+        struct UV_SAMPLE  { DMF_UV     UVs[3];   } UVSample;
+        Printf("  Block[%d]: vc=%d boneSlots=%d\n", bi, MeshBlock.VtxCount, MeshBlock.BoneIdxCnt);
+    }
+} else {
+    // BM02-style: linked chain
+    Printf("Style: BM02  first=0x%X\n", firstBlock);
+    blockOff = firstBlock;
+    bi = 0;
+    while (blockOff > 0 && blockOff < FileSize() && bi < 3) {
+        FSeek(blockOff);
+        DMF_MESHBLOCK MeshBlock2;
+        vtxBuf2 = MeshBlock2.VtxBufBase + 12;
+        uvBuf2  = MeshBlock2.UVBufBase  + 12;
+        FSeek(vtxBuf2);
+        struct VTX_SAMPLE2 { DMF_VERTEX Verts[3]; } VtxSample2;
+        FSeek(uvBuf2);
+        struct UV_SAMPLE2  { DMF_UV     UVs[3];   } UVSample2;
+        Printf("  Block[%d] @0x%X: vc=%d boneSlots=%d\n", bi, blockOff, MeshBlock2.VtxCount, MeshBlock2.BoneIdxCnt);
+        uvEnd   = uvBuf2 + MeshBlock2.VtxCount * 12;
+        npos = uvEnd;
+        while (npos < uvEnd + 32 && ReadUInt(npos) == 0) npos += 4;
+        if (npos >= uvEnd + 32) break;
+        blockOff = ReadUInt(npos);
+        if (blockOff == 0 || blockOff >= FileSize()) break;
+        bi++;
+    }
+}

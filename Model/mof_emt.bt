@@ -1,0 +1,197 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mof_emt.bt
+//   Authors: Sten
+//   Version: 1.1.0
+//   Purpose: Medal of Honor Frontline - EMT Entity Motion Table
+//  Category: Game
+// File Mask: *.emt
+//  ID Bytes: 00 54 4D 45
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//   Header (32B): Magic=0x454D5400 Version=1 EntityCount OffA OffB OffC
+//
+//   Section A Prolog (0x20..OffC): 158 variable records
+//     type(u16) + size(u16) + payload
+//     type2(32B): X/Y/Z fp/65536 + Unk + Yf + sin/cos heading
+//     type9(36B): AI/LOD config
+//     type5(12B): misc   type11(12B): aux config
+//
+//   Section C (OffC):
+//     LevelLoopFrames(u32) + EntityOffsets(u32[EntityCount+1])
+//     EntityDataBase = OffC + 4 + (EntityCount+1)*4
+//     Entity[i] @ EntityDataBase + EntityOffsets[i]:
+//       RuntimePtr(u32) + int16[3][BoneCount] SNORM16 bone quaternions
+//       BoneCount = (EntityOffsets[i+1]-EntityOffsets[i]-4) / 6
+//       EMT bone[N] → SKL BoneNames[N] (1:1 mapping)
+//
+//   Section B (OffB):
+//     SkelCount(u32) + BRecordPtrs(u32[SkelCount])
+//     B-record[+0]=RuntimeID  [+4]=LEKSPtr(abs)
+//     LEKS @ LEKSPtr: Tag=LEKS + BoneDataPtr + NextLEKSPtr + BoneCount + Pad
+//     BoneData @ BoneDataPtr: count(u16) + int16[3][count] SNORM16 quats
+//
+//   B Extra (BRecordPtrs end..OffA): N*12B EntityRef+TickRef+Config
+//
+//   Section A Table (OffA):
+//     Count(u32) + Count*20B: EntityIdx(u16)+TypeID(u16)+AbsPtr+PrologCfgOff+DataSize+Pad
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Typedefs ──────────────────────────────────────────────────────────────────
+
+typedef struct {
+    uint32 Magic       <format=hex>;
+    uint32 Version;
+    uint32 Pad;
+    uint32 EntityCount;
+    uint32 OffA        <format=hex>;
+    uint32 OffB        <format=hex>;
+    uint32 OffC        <format=hex>;
+    uint32 Pad2;
+} EMT_HEADER;
+
+typedef struct {
+    float X; float Y; float Z; float Unk;
+    float Yf; float SinH; float CosH; float Pad;
+} A_TYPE2;
+
+typedef struct {
+    uint16 Type;
+    uint16 Size;
+    if (Type == 2 && Size == 32)      A_TYPE2 WorldPos;
+    else if (Type == 9  && Size == 36) byte LODConfig[36];
+    else if (Type == 5  && Size == 12) byte MiscConfig[12];
+    else if (Type == 11 && Size == 12) byte AuxConfig[12];
+    else if (Size > 0)                 byte Raw[Size];
+} A_REC <read=ReadARec, optimize=false>;
+string ReadARec(A_REC& r) {
+    string s;
+    if (r.Type == 2)
+        SPrintf(s, "type2  pos=(%.1f,%.1f,%.1f) hdg=(%.3f,%.3f)", r.WorldPos.X, r.WorldPos.Y, r.WorldPos.Z, r.WorldPos.SinH, r.WorldPos.CosH);
+    else if (r.Type == 9)  SPrintf(s, "type9  AI/LOD  size=%d", r.Size);
+    else if (r.Type == 5)  SPrintf(s, "type5  Misc    size=%d", r.Size);
+    else if (r.Type == 11) SPrintf(s, "type11 Aux     size=%d", r.Size);
+    else                   SPrintf(s, "type%d          size=%d", r.Type, r.Size);
+    return s;
+}
+
+typedef struct {
+    uint32 RuntimePtr <format=hex>;
+} ENTITY_HDR;
+
+typedef struct {
+    uint32 EntityRef;
+    uint32 TickRef;
+    uint32 Config <format=hex>;
+} B_EXTRA <read=ReadBX>;
+string ReadBX(B_EXTRA& e) {
+    string s;
+    SPrintf(s, "entity=%d  tick=%d  cfg=0x%X", e.EntityRef, e.TickRef, e.Config);
+    return s;
+}
+
+typedef struct {
+    uint16 EntityIdx;
+    uint16 TypeID       <format=hex>;
+    uint32 AbsPtr       <format=hex>;
+    uint32 PrologCfgOff <format=hex>;
+    uint32 DataSize;
+    uint32 Pad;
+} A_TABLE_ENTRY <read=ReadATE>;
+string ReadATE(A_TABLE_ENTRY& e) {
+    string s;
+    SPrintf(s, "entity=%d  type=0x%X  size=%d", e.EntityIdx, e.TypeID, e.DataSize);
+    return s;
+}
+
+typedef struct {
+    uint32 Tag         <format=hex>;
+    uint32 BoneDataPtr <format=hex>;
+    uint32 NextLEKSPtr <format=hex>;
+    uint32 BoneCount;
+    uint32 Pad;
+} LEKS_HDR <read=ReadLH>;
+string ReadLH(LEKS_HDR& h) {
+    string s;
+    SPrintf(s, "LEKS  bones=%d  BoneDataPtr=0x%X  next=0x%X", h.BoneCount, h.BoneDataPtr, h.NextLEKSPtr);
+    return s;
+}
+
+// ── Parse ─────────────────────────────────────────────────────────────────────
+
+EMT_HEADER Header;
+
+// Section A prolog
+local uint32 rpos = 0x20;
+while (rpos + 4 <= Header.OffC) {
+    FSeek(rpos);
+    if (ReadUShort(rpos) == 0 && ReadUShort(rpos + 2) == 0) break;
+    A_REC APRec;
+    rpos = FTell();
+}
+
+// Section C
+FSeek(Header.OffC);
+uint32 LevelLoopFrames;
+uint32 EntityOffsets[Header.EntityCount + 1] <format=hex>;
+
+local uint32 EntityDataBase = Header.OffC + 4 + (Header.EntityCount + 1) * 4;
+local uint32 eBones         = 0;
+local int    i              = 0;
+
+// First 10 entity samples
+for (i = 0; i < 10; i++) {
+    eBones = (EntityOffsets[i+1] - EntityOffsets[i] - 4) / 6;
+    FSeek(EntityDataBase + EntityOffsets[i]);
+    ENTITY_HDR EntityHdr;
+    FSkip(eBones * 6);
+    Printf("  Entity[%d]: bones=%d\n", i, eBones);
+}
+
+// Section B
+FSeek(Header.OffB);
+uint32 SkelCount;
+uint32 BRecordPtrs[SkelCount] <format=hex>;
+
+local uint32 BExtraBase  = Header.OffB + 4 + SkelCount * 4;
+local uint32 BExtraCount = (Header.OffA - BExtraBase) / 12;
+
+FSeek(BExtraBase);
+B_EXTRA BExtraArray[BExtraCount];
+
+// LEKS blocks
+// LEKS blocks: read via loop using Printf (FSeek incompatible with arrays)
+local uint32 g_llp2   = 0;
+local uint32 g_lbdp   = 0;
+local uint32 g_lbcnt  = 0;
+local int    g_li2    = 0;
+for (g_li2 = 0; g_li2 < (int)SkelCount; g_li2++) {
+    g_llp2  = ReadUInt(BRecordPtrs[g_li2] + 4);
+    g_lbcnt = ReadUInt(g_llp2 + 12);
+    g_lbdp  = ReadUInt(g_llp2 + 4);
+    Printf("  LEKS[%d]: tag=0x%X bones=%d BoneDataPtr=0x%X next=0x%X\n",
+        g_li2,
+        ReadUInt(g_llp2),
+        g_lbcnt,
+        g_lbdp,
+        ReadUInt(g_llp2 + 8));
+}
+
+// Section A table
+FSeek(Header.OffA);
+uint32 SectionACount;
+A_TABLE_ENTRY SectionAEntries[SectionACount];
+
+// Summary
+Printf("=== EMT ===\n");
+Printf("EntityCount:     %d\n", Header.EntityCount);
+Printf("LevelLoopFrames: %d (%.1fs)\n", LevelLoopFrames, LevelLoopFrames / 30.0);
+Printf("SkelCount:       %d\n", SkelCount);
+Printf("BExtraCount:     %d\n", BExtraCount);
+Printf("SectionAEntries: %d\n", SectionACount);

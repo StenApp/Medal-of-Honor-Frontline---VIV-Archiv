@@ -1,0 +1,100 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_xsh.bt
+//   Authors: Sten
+//   Version: 0.2.0
+//   Purpose: Medal of Honor Frontline - XSH Xbox Standalone Texture
+//  Category: Game
+// File Mask: *.xsh
+//  ID Bytes: 53 48 50 58
+//   History:
+//     0.2.0  2026-05-25  Added DXT1 (fmt=96) confirmed via j1_1_pg1.xsh (1024x512).
+//                        All 4 pixel formats now verified.
+//     0.1.0  2026-05-25  Initial, fmt=123/125 only.
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//   SHPX Header (128 bytes):
+//     [+0x00] Magic       char[4]  = 'SHPX'
+//     [+0x04] FileSize    uint32   = total file size
+//     [+0x08] Unknown     uint32   = 1
+//     [+0x0C] NameHash    char[8]  = internal name string (e.g. 'G3430000')
+//     [+0x14] PixDataOff  uint32   = offset to pixel data from block start (= 0x70 = 112)
+//             NOTE: pixel data actually begins at 0x80, but offset stored as 0x70
+//     [+0x18] Copyright   char[24] = 'Buy ERTS' + padding
+//     [+0x70] PixelFormat ubyte    = pixel format (see below)
+//     [+0x71] Unknown1    ubyte
+//     [+0x72] Unknown2    ubyte    = log2(width) or dimension hint
+//     [+0x73] MipLevels   ubyte    = 0 (single mip)
+//     [+0x74] Width       uint16   = pixel width
+//     [+0x76] Height      uint16   = pixel height
+//     [+0x78] Unknown3    uint32
+//     [+0x7C] Unknown4    uint32
+//
+//   Pixel formats:
+//     96  = DXT1 (no alpha)  - Xbox compressed, data = W*H/2 bytes
+//     97  = DXT3 (alpha)     - Xbox compressed, data = W*H bytes
+//     123 = PAL8             - Morton-swizzled indexed, data = W*H bytes + 1024B palette
+//     125 = BGRA8888         - Morton-swizzled raw, data = W*H*4 bytes
+//
+//   Pixel data starts at file offset 0x80 (128).
+//
+//   Decode Morton-swizzled formats via EA-Graphics-Manager:
+//     handle_image_swizzle_logic(pixels, fmt, w, h, 'SHPX', False)
+//   For fmt=123: palette (256 * BGRA8888) follows after pixel data.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+typedef struct {
+    char    Magic[4]        ;  // 'SHPX'
+    uint32  FileSize        ;  // Total file size
+    uint32  Unknown         ;  // = 1
+    char    NameHash[8]     ;  // Internal name/hash (e.g. 'G3430000')
+    uint32  PixDataOff      ;  // = 0x70 (pixel data at +0x80 in file)
+    char    Copyright[24]   ;  // 'Buy ERTS' copyright string + padding
+    byte    Padding[48]     ;  // Zero padding
+    ubyte   PixelFormat     ;  // 96=DXT1, 97=DXT3, 123=PAL8 swizzled, 125=BGRA8888 swizzled
+    ubyte   Unknown1;
+    ubyte   Unknown2        ;  // log2(width) hint for swizzle
+    ubyte   MipLevels       ;  // 0 = single mip level
+    uint16  Width           ;  // Pixel width
+    uint16  Height          ;  // Pixel height
+    uint32  Unknown3;
+    uint32  Unknown4;
+} SHPX_HEADER ;  // SHPX standalone texture header, 128 bytes
+
+SHPX_HEADER Header;
+
+// Pixel data size
+local uint32 pix_size;
+if (Header.PixelFormat == 96)       pix_size = Header.Width * Header.Height / 2;
+else if (Header.PixelFormat == 97)  pix_size = Header.Width * Header.Height;
+else if (Header.PixelFormat == 123) pix_size = Header.Width * Header.Height;
+else if (Header.PixelFormat == 125) pix_size = Header.Width * Header.Height * 4;
+else                                pix_size = FileSize() - 0x80;
+
+byte PixelData[pix_size]
+    ;  // Pixel data. See format notes for decoding.
+
+if (Header.PixelFormat == 123 && FileSize() > 0x80 + pix_size) {
+    byte PaletteData[FileSize() - 0x80 - pix_size]
+        ;  // 256 BGRA8888 palette + possible dir-entry header (PAL8 only)
+}
+
+local string fmt_name;
+if      (Header.PixelFormat == 96)  fmt_name = "DXT1 (no alpha)";
+else if (Header.PixelFormat == 97)  fmt_name = "DXT3 (alpha)";
+else if (Header.PixelFormat == 123) fmt_name = "PAL8 Morton-swizzled";
+else if (Header.PixelFormat == 125) fmt_name = "BGRA8888 Morton-swizzled";
+else                                fmt_name = "unknown";
+
+Printf("=== XSH Summary ===\n");
+Printf("Magic:    %.4s\n", Header.Magic);
+Printf("Size:     %d bytes\n", Header.FileSize);
+Printf("Format:   %d (%s)\n", Header.PixelFormat, fmt_name);
+Printf("Dims:     %d x %d\n", Header.Width, Header.Height);
+Printf("PixData:  %d bytes at offset 0x80\n", pix_size);

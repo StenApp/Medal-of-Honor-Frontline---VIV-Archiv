@@ -1,0 +1,104 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_psp.bt
+//   Authors: Sten
+//   Version: 0.1.0
+//   Purpose: Medal of Honor Frontline - PSP Physics BSP (Collision)
+//  Category: Game
+// File Mask: *.psp
+//  ID Bytes: 50 42 53 50 5f 48 45 41 44 45 52
+//   History:
+//     0.1.0  2026-05-24  Initial. Full structure decoded:
+//                        6 BSP split-plane sections; face index lists per leaf;
+//                        collision geometry is separate from render geometry (BPD).
+//                        NO render material assignment in PSP.
+//
+// ── FORMAT NOTES ─────────────────────────────────────────────────────────────
+//
+//  PSP = Physics BSP. Companion file to BPD (same basename, different extension).
+//  Contains collision geometry for the level sector.
+//  Does NOT contain render material assignments or diffuse UV data.
+//
+//  FILE LAYOUT:
+//    [0x00..0x0B]  Magic: "PBSP_HEADER\0" (12 bytes)
+//    [0x0C..0x1B]  Runtime pointers (Xbox heap addresses, pre-linked, not useful offline)
+//    [0x1C..0x1F]  Runtime pointer
+//    [0x20]        uint32 SectionCount = 6 (valid BSP split sections)
+//    [0x24]        uint32 SectionOffset = 0x28 (offset to first section)
+//    [0x28..]      BSP_SECTION[SectionCount] (16 bytes each)
+//    After sections: collision face index lists (uint16 pairs)
+//    Later in file: collision vertex data (float3 positions)
+//
+//  BSP_SECTION (16 bytes):
+//    [+00] float  PlaneD       BSP split-plane distance (D value of Ax+By+Cz=D)
+//    [+04] uint32 NextOffset   absolute offset to next section (= current + 16)
+//    [+08] uint32 FaceCount    size of face index data (in uint16 units? or bytes?)
+//    [+0C] uint32 Flags        0x00400000 / 0x00120000 / 0 (section type flags)
+//
+//  The 6 PlaneD values correspond to the 6 BSP split planes that partition
+//  the sector. These same values appear in the BPD BSP_PLANE pool.
+//
+//  Face index data: uint16 pairs forming collision polygon edge lists.
+//  Values are sequential vertex indices (ascending runs indicate face boundaries).
+//
+//  NOTE: The PSP contains ONLY collision geometry. Surface type flags (Flags field)
+//  indicate material category for sound/gameplay (solid, water, trigger) but
+//  do NOT reference CPT render textures.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Magic ─────────────────────────────────────────────────────────────────────
+
+char Magic[12] ;  // 'PBSP_HEADER\\0'
+
+// ── Runtime Pointers (pre-linked Xbox addresses, not useful offline) ──────────
+
+uint32 RuntimePtr0 <format=hex, comment="Xbox heap ptr (runtime only)">;
+uint32 RuntimePtr1 <format=hex>;
+uint32 RuntimePtr2 <format=hex>;
+uint32 RuntimePtr3 <format=hex>;
+
+// ── BSP Section Table ─────────────────────────────────────────────────────────
+
+uint32 SectionCount ;  // = 6 valid BSP split sections (11 header entries total but only 6 valid)
+uint32 SectionOffset <format=hex, comment="= 0x28, offset to first section">;
+
+typedef struct {
+    float  PlaneD       ;  // BSP split-plane D value (same values in BPD PlanePool)
+    uint32 NextOffset   <format=hex, comment="absolute offset to next section (= current + 16)">;
+    uint32 DataCount    ;  // size of collision face data for this spatial partition
+    uint32 Flags        <format=hex>;  // 0x00400000=section0 0x00120000=section1 0=leaf. Surface: 0=solid 1=trigger 2=water
+} BSP_SECTION <read=ReadSection, size=16>;
+
+string ReadSection(BSP_SECTION& s) {
+    string str;
+    SPrintf(str, "D=%.3f  count=%d  flags=0x%X", s.PlaneD, s.DataCount, s.Flags);
+    return str;
+}
+
+FSeek(SectionOffset);
+BSP_SECTION Sections[SectionCount];
+
+// ── Remaining data: collision face lists + vertex data ────────────────────────
+
+local quad data_start = FTell();
+local quad data_size  = FileSize() - data_start;
+byte CollisionData[data_size]
+;  // Collision face index lists (uint16 pairs = edge adjacency) followed by collision vertex positions (float3). Total collision triangles: sum of section DataCounts. Vertex positions match BPD world-space coordinate system.
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+
+Printf("=== PSP Summary ===\ ");
+Printf("Magic:          %s\ ", Magic);
+Printf("Section count:  %d BSP split partitions\ ", SectionCount);
+Printf("Split planes:\ ");
+local int i;
+for (i = 0; i < SectionCount; i++) {
+    Printf("  [%d] PlaneD=%.3f  count=%d  flags=0x%08X\ ", i, Sections[i].PlaneD, Sections[i].DataCount, Sections[i].Flags);
+}
+Printf("\ NOTE: Collision geometry only. No render material assignment.\ ");
+Printf("NOTE: PlaneD values correspond to BPD BSP_PLANE pool entries.\ ");

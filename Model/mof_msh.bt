@@ -1,0 +1,256 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mof_msh.bt
+//   Authors: Sten
+//   Version: 0.4.1
+//   Purpose: Medal of Honor Frontline - MSH/MPK Static Mesh
+//  Category: Game
+// File Mask: *.msh;*.mpk
+//  ID Bytes: 0B 00 00 00
+//   History:
+//     0.4.1  2026-05-25  Cleaned up TBD comments: Unk2=third material slot, Unk3=SceneNode.
+//     0.4.0  2026-05-25  Full internal structure decoded. All sections identified:
+//                        MaterialTable (128B/entry): TextureCount+SlotIndices+PixelDataPtr+
+//                        PaletteDataPtr+RenderFlags+Hashes. Unk2 = third material slot
+//                        (same layout). MeshTable (32B/entry): NodePtr+MatPtr+MeshBlockPtr+
+//                        IdxCount. MeshBlock @ [MeshBlockPtr]: null[3]+VtxPtr+IdxPtr+
+//                        VtxCnt+IdxCnt. Mesh[0] MeshBlock always at file offset 0x30
+//                        (immediately after 48B header). Unk3 = SceneNode: MeshTablePtr+
+//                        MeshCount+BoundingSphereRadius+Center XYZ+AABB extents.
+//                        Transform section: 4x4 float matrices (row-major, 64B each).
+//                        SHPX textures embedded inline: layout = SHPX header(128B) +
+//                        PixelData(W×H bytes, PAL8 Morton) + 64B pad/dir-entry + BGRA
+//                        palette(1024B). MaterialTable PixelDataPtr = SHPX_base+0x80.
+//                        Verified: KAR98, grenade, 9mm, 22long and others.
+//     0.3.0  2026-05-25  PackedNormal confirmed: Xbox D3DDECLTYPE_NORMPACKED3, 11-11-10 signed.
+//                        X=bits[10:0]\/1023, Y=bits[21:11]\/1023, Z=bits[31:22]\/511.
+//                        Verified against 25 MSH files, 7676 vertices, all mag≈1.0.
+//     0.2.0  2026-05-22  Corrected header layout (matched against h3x3r/MrGravey
+//                        ReSHAX plugin); MeshTable stride=32, Mesh-Block structure,
+//                        VtxCount+IdxCount packed field, degenerate strip confirmed
+//     0.1.0  2026-05-22  Initial (header offsets partially wrong)
+//
+// Credit: Format originally documented by h3x3r & MrGravey (ReSHAX topic #18753)
+//
+// FILE LAYOUT:
+//
+//   [0x00..0x2F]  Header (48 bytes, 12 × uint32)
+//   [MeshOffset]  Mesh-Block (pointed to by MeshTable entry)
+//   [VtxBufOff]   Vertex buffer (VtxCount × 28 bytes)
+//   [IdxBufOff]   Index buffer  (IdxCount × uint16, triangle strip)
+//   [Unk2Off]     Third material slot (same 128B layout as MaterialTable, Unk2Count entries)
+//   [MeshTableOff] Mesh table (MeshCount × 32 bytes)
+//   [Unk3Off]     SceneNode: back-ptr to MeshTable + BoundingSphere + AABB extents
+//   [MatTableOff] Material table (MatCount × 128 bytes)
+//                 Each entry points to embedded texture (PS2 palette+raw or Xbox SHPX)
+//
+// VERTEX FORMAT (stride 28 bytes):
+//   [+00]  float3  Position XYZ
+//   MESHTABLE ENTRY (32 bytes):
+//   [+ 0]  uint32  NodePtr      abs ptr → Unk3/SceneNode block
+//   [+ 4]  uint32  MatPtr       abs ptr → MaterialTable entry (or Unk2 for 3rd mat)
+//   [+ 8]  uint32  MeshBlockPtr abs ptr → MeshBlock struct. Mesh[0] is ALWAYS at 0x30
+//                                        (first byte after 48B header). Other meshes
+//                                        have ptr into texture/data area.
+//   [+12]  uint32  IdxCount     index count for this sub-mesh
+//   [+16]  uint32[4] = 0        padding
+//
+//   MESHBLOCK (24 bytes at MeshBlockPtr):
+//   [+ 0]  uint32[3] = 0        padding
+//   [+12]  uint32  VtxPtr       abs ptr → vertex buffer
+//   [+16]  uint32  IdxPtr       abs ptr → index buffer
+//   [+20]  uint16  VtxCount     vertex count
+//   [+22]  uint16  IdxCount     index count (also in MeshTable entry)
+//
+//   MATERIALTABLE ENTRY (128 bytes):
+//   [+ 0]  uint32[5] = 0        padding
+//   [+20]  uint32  TextureCount = usually 2
+//   [+24]  uint32  SlotIndexA   global texture slot index (0-based)
+//   [+28]  uint32  SlotIndexB   second texture slot index
+//   [+32]  uint32  PixelDataPtr abs ptr = SHPX_base+0x80 (pixel data start)
+//   [+36]  uint32  PalettePtr   abs ptr = SHPX_base+0x80+W×H+0x40 (BGRA palette)
+//   [+40]  uint32  RenderFlags  = 0x00040001 (texture filter flags)
+//   [+44]  uint32[2] = 0
+//   [+52]  uint32  HashA        texture name hash
+//   [+56]  uint32 = 0
+//   [+60]  uint32  HashB        second texture hash
+//   [+64..127] = 0              padding to 128B
+//
+//   Unk2 = third material slot (identical 128B layout, separate count in header)
+//
+//   UNK3 / SCENENODE (64 bytes):
+//   [+ 0]  uint32  MeshTablePtr back-ref to MeshTable
+//   [+ 4]  uint32  MeshCount    = mesh_cnt
+//   [+ 8]  uint32[2] = 0
+//   [+16]  float   BoundingSphereRadius
+//   [+20]  uint32[2] = 0
+//   [+28]  float   BoundingSphereRadius (copy)
+//   [+32]  uint32[2] = 0
+//   [+36]  float   BoundSphCenterX
+//   [+40]  float   BoundSphCenterY  
+//   [+44]  float   BoundSphCenterZ
+//   [+48]  uint32 = 0
+//   [+52]  float   AABBmaxX
+//   [+56]  float   AABBmaxY
+//   [+60]  float   AABBmaxZ
+//
+//   SHPX TEXTURE LAYOUT (inline in file):
+//   SHPX header (128B) + PixelData (W×H bytes, PAL8 Morton-swizzled) +
+//   64B (dir-entry/padding) + BGRA8888 palette (1024B)
+//   MaterialTable PixelDataPtr = SHPX_base + 128
+//   MaterialTable PalettePtr   = SHPX_base + 128 + W×H + 64
+//
+//   TRANSFORM SECTION: trans_cnt × 64B row-major float matrices
+//   Each = 4×4 rotation/translation matrix (row3 = translation XYZ + 1.0)
+//
+//   VERTEX FORMAT (stride 28 bytes):
+//   [+ 0]  uint32  PackedNormal  Xbox D3DDECLTYPE_NORMPACKED3:
+//                       X = bits[10: 0] / 1023.0  (11-bit signed)
+//                       Y = bits[21:11] / 1023.0  (11-bit signed)
+//                       Z = bits[31:22] /  511.0  (10-bit signed)
+//                       sign11(x) = x>=0x400 ? (x-0x800)/1023 : x/1023
+//                       sign10(x) = x>=0x200 ? (x-0x400)/ 511 : x/ 511
+//                       Verified: 25 files, 7676 verts, all mag≈1.000
+//   [+16]  uint32  VertexColor   (RGBA8; 0xFFFFFFFF = white/opaque in observed files)
+//   [+20]  float2  UV (ST)
+//
+// INDEX FORMAT:
+//   uint16 triangle strip. Degenerate triangles (two consecutive equal indices)
+//   are used as strip restarts instead of 0xFFFF sentinel.
+//   Effective triangles = IdxCount - 2 - (number of degenerate pairs × 2)
+//
+// MATERIAL (128 bytes each):
+//   [+20]  uint32  RawDataOffset    abs offset to palette-indexed pixel data
+//   [+24]  uint32  PaletteOffset    abs offset to palette; uint32 entry count
+//                                   is stored 8 bytes BEFORE PaletteOffset
+//   [+34]  ubyte   PixelFormat      (41=PS2 palette-8bpp; 96=DXT1; 97=DXT3; etc.)
+//   [+60]  uint32  TextureWidth
+//   [+64]  uint32  TextureHeight
+//   [+6C]  uint32  HeaderOffset     abs offset to SHPX block (Xbox) or 0
+//   [+7C]  uint32  ExternalTexId    0 = texture embedded; non-zero = from .cpt/.tpk
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+struct MSH_HEADER {
+    uint32  Sign            ;  // 0x0B = MSH/MPK signature
+    uint32  ResourceSize    ;  // Total file size in bytes
+    uint32  MatTableOff     <format=hex,
+                             comment="Abs offset to material table (0 = no embedded materials)">;
+    uint32  MatCount        ;  // Number of material entries (0 if external)
+    uint32  Unk2Off         <format=hex, comment="Third material slot (same 128B layout as MaterialTable)">;
+    uint32  Unk2Count;
+    uint32  MeshTableOff    <format=hex,
+                             comment="Abs offset to mesh table (MeshCount × 32-byte entries)">;
+    uint32  MeshCount       ;  // Number of mesh table entries
+    uint32  Unk3Off         <format=hex, comment="SceneNode: MeshTablePtr + BoundingSphere + AABB extents (64B)">;
+    uint32  Unk3Count;
+    uint32  TransformOff    <format=hex, comment="Abs offset to transform block (0 if absent)">;
+    uint32  TransformCount;
+} Header ;  // MSH/MPK header, 48 bytes
+
+// ── Mesh Table ────────────────────────────────────────────────────────────────
+
+FSeek(Header.MeshTableOff);
+
+typedef struct {
+    uint32  Unknown0;
+    uint32  MaterialOff <format=hex,
+                         comment="Abs offset to 128-byte material entry for this mesh">;
+    uint32  MeshOff     <format=hex,
+                         comment="Abs offset to Mesh-Block for this mesh">;
+    uint32  Unknown1;
+    uint32  Null[4];
+} MSH_TABLE_ENTRY <size=32, read=ReadMshTableEntry>;
+
+string ReadMshTableEntry(MSH_TABLE_ENTRY& e) {
+    string s;
+    SPrintf(s, "mat=0x%X  mesh=0x%X", e.MaterialOff, e.MeshOff);
+    return s;
+}
+
+MSH_TABLE_ENTRY MeshTable[Header.MeshCount];
+
+// ── Mesh Blocks + Geometry ────────────────────────────────────────────────────
+
+typedef struct {
+    float X, Y, Z;
+    uint32  PackedNormal    <format=hex,
+                             comment="Xbox NORMPACKED3: X=bits[10:0]/1023 (11-bit signed), Y=bits[21:11]/1023 (11-bit signed), Z=bits[31:22]/511 (10-bit signed). Use script: nx=sign11(v&0x7FF), ny=sign11((v>>11)&0x7FF), nz=sign10((v>>22)&0x3FF)">;
+    uint32  VertexColor     <format=hex,
+                             comment="RGBA8 vertex color; 0xFFFFFFFF = white/opaque">;
+    float U, V;
+} MSH_VERTEX <size=28, read=ReadMshVertex>;
+
+string ReadMshVertex(MSH_VERTEX& v) {
+    string s;
+    SPrintf(s, "(%.3f,%.3f,%.3f)  uv=(%.3f,%.3f)", v.X, v.Y, v.Z, v.U, v.V);
+    return s;
+}
+
+local int mi;
+local uint32 mesh_off;
+for (mi = 0; mi < Header.MeshCount; mi++) {
+    mesh_off = MeshTable[mi].MeshOff;
+
+    FSeek(mesh_off);
+    struct MESH_BLOCK {
+        uint32  Null[3];
+        uint32  VtxBufOff   <format=hex, comment="Abs offset to vertex buffer">;
+        uint32  IdxBufOff   <format=hex, comment="Abs offset to index buffer">;
+        uint16  VtxCount    ;  // Number of vertices
+        uint16  IdxCount    ;  // Number of indices (triangle strip)
+    } MeshBlock;
+
+    FSeek(MeshBlock.VtxBufOff);
+    struct MESH_GEO {
+        MSH_VERTEX Vertices[MeshBlock.VtxCount];
+        // idx buffer follows after FSeek
+    } VtxData;
+    FSeek(MeshBlock.IdxBufOff);
+    struct MESH_IDX {
+        uint16 Indices[MeshBlock.IdxCount];
+    } IdxData;
+}
+
+// ── Material Table ────────────────────────────────────────────────────────────
+
+if (Header.MatTableOff > 0 && Header.MatCount > 0) {
+    FSeek(Header.MatTableOff);
+
+    typedef struct {
+        byte    Null[0x20];
+        uint32  RawDataOff      <format=hex,
+                                 comment="Abs offset to palette-indexed pixel data">;
+        uint32  PaletteOff      <format=hex,
+                                 comment="Abs offset to palette BGRA8; uint32 entry count at PaletteOff-8">;
+        byte    Unknown[0x0C];
+        ubyte   PixelFormat     ;  // 41=PS2 pal8, 96=DXT1, 97=DXT3, 123=Morton pal8, 125=BGRA8
+        byte    Unknown2[0x2B];
+        uint32  TextureWidth;
+        uint32  TextureHeight;
+        byte    Unknown3[0x08];
+        uint32  ShpxHeaderOff   <format=hex,
+                                 comment="Abs offset to SHPX block (Xbox); 0 = no SHPX">;
+        byte    Unknown4[0x0C];
+        uint32  ExternalTexId   ;  // 0 = embedded; non-zero = texture from .cpt/.tpk
+    } MSH_MATERIAL <size=128>;
+
+    MSH_MATERIAL Materials[Header.MatCount];
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+
+Printf("=== MSH/MPK Static Mesh ===\ ");
+Printf("ResourceSize: %d bytes\ ", Header.ResourceSize);
+Printf("MeshCount:    %d\ ", Header.MeshCount);
+local int si;
+for (si = 0; si < Header.MeshCount; si++) {
+    Printf("  Mesh[%d]: %d vertices, %d strip indices\ ", si, MeshBlock.VtxCount, MeshBlock.IdxCount);
+}
+Printf("MatCount:     %d  (%s)\ ", Header.MatCount, Header.MatCount > 0 ? "embedded" : "external - see .cpt/.tpk");

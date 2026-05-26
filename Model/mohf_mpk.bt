@@ -1,0 +1,113 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_mpk.bt
+//   Authors: Sten
+//   Version: 2.0.0
+//   Purpose: Medal of Honor Frontline - MPK Mesh Pack
+//  Category: Game
+// File Mask: *.mpk
+//  ID Bytes: 00 00 00 00
+//   History:
+//     2.0.0  2026-05-26  Stable: header + offset table as structs,
+//                        block info via Printf (no FSeek in arrays).
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//   Header (32B):
+//     [+0x00] Sign        uint32 = 0
+//     [+0x04] FileSize    uint32
+//     [+0x08] HdrSize     uint32 = 32
+//     [+0x0C] EntryCount  uint32
+//     [+0x10] EntryCount2 uint32
+//     [+0x14] Pad[3]
+//
+//   Offset table: EntryCount × uint32 absolute block offsets.
+//   Block size = next_offset - current_offset (last: FileSize - offset).
+//   ALL offsets inside MSH blocks are RELATIVE to block start.
+//
+//   MSH block at each offset:
+//     [+0x00] Sign=0x0B  [+0x04] ResourceSize
+//     [+0x08] MatTableOff(rel)  [+0x0C] MatCount
+//     [+0x10] Unk2Off(rel)      [+0x14] Unk2Count
+//     [+0x18] MeshTableOff(rel) [+0x1C] MeshCount
+//     [+0x20] Unk3Off(rel)      [+0x24] Unk3Count
+//     [+0x28] TransformOff(rel) [+0x2C] TransformCount (0=static)
+//
+//   MeshTable entry (32B, at blockStart+MeshTableOff):
+//     [+0x00] Unk0  [+0x04] MatOff(rel)  [+0x08] MeshOff(rel)  [+0x0C] Unk1  Null[4]
+//
+//   MeshBlock (24B, at blockStart+MeshOff):
+//     Null[3] + VtxBufOff(rel) + IdxBufOff(rel) + VtxCount(u16) + IdxCount(u16)
+//
+//   VtxBuf (VtxCount × 28B): float3 XYZ + uint32 PackedNormal + uint32 Color + float2 UV
+//   IdxBuf (IdxCount × uint16): triangle strip
+//   Material (128B at blockStart+MatOff): see mof_msh.bt
+//
+//   Examples:
+//     BarrelMolotovSwapping.mpk: 2 blocks (LOD levels)
+//     Tank_PIV_Tread01.mpk:      6 blocks (animation frames)
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+typedef struct {
+    uint32 Sign        <format=hex>;
+    uint32 FileSize;
+    uint32 HdrSize;
+    uint32 EntryCount;
+    uint32 EntryCount2;
+    uint32 Pad[3];
+} MPK_HEADER <read=ReadHdr>;
+string ReadHdr(MPK_HEADER& h) {
+    string s;
+    SPrintf(s, "MPK  blocks=%d  size=%d", h.EntryCount, h.FileSize);
+    return s;
+}
+
+MPK_HEADER Header;
+uint32 OffsetTable[Header.EntryCount] <format=hex>;
+
+// ── Block info via Printf ─────────────────────────────────────────────────────
+
+local int    i          = 0;
+local uint32 blockOff   = 0;
+local uint32 nextOff    = 0;
+local uint32 blockSize  = 0;
+local uint32 matCount   = 0;
+local uint32 meshCount  = 0;
+local uint32 mtOff      = 0;
+local uint32 meshOff    = 0;
+local uint32 vtxBuf     = 0;
+local uint32 idxBuf     = 0;
+local uint32 vtxCount   = 0;
+local uint32 idxCount   = 0;
+local int    mi         = 0;
+
+Printf("=== MPK: %d blocks ===\n", Header.EntryCount);
+
+for (i = 0; i < (int)Header.EntryCount; i++) {
+    blockOff  = OffsetTable[i];
+    nextOff   = (i+1 < (int)Header.EntryCount) ? OffsetTable[i+1] : Header.FileSize;
+    blockSize = nextOff - blockOff;
+    matCount  = ReadUInt(blockOff + 0x0C);
+    meshCount = ReadUInt(blockOff + 0x1C);
+    mtOff     = blockOff + ReadUInt(blockOff + 0x18);
+
+    Printf("  Block[%d] @0x%X  size=%d  mats=%d  meshes=%d\n",
+           i, blockOff, blockSize, matCount, meshCount);
+
+    for (mi = 0; mi < (int)meshCount; mi++) {
+        meshOff  = blockOff + ReadUInt(mtOff + mi*32 + 8);
+        vtxCount = ReadUShort(meshOff + 20);
+        idxCount = ReadUShort(meshOff + 22);
+        vtxBuf   = blockOff + ReadUInt(meshOff + 12) + 12;
+        idxBuf   = blockOff + ReadUInt(meshOff + 16) + 12;
+        Printf("    Mesh[%d]: vc=%d ic=%d  vtxBuf=0x%X  idxBuf=0x%X\n",
+               mi, vtxCount, idxCount, vtxBuf, idxBuf);
+    }
+}

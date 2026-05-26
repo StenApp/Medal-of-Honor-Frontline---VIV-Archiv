@@ -1,0 +1,172 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_tpk.bt
+//   Authors: Sten
+//   Version: 0.2.0
+//   Purpose: Medal of Honor Frontline - TPK Texture Pack
+//  Category: Game
+// File Mask: *.tpk
+//  ID Bytes: 54 50 41 43
+//   History:
+//     0.2.0  2026-05-24  Full format verified against tpk1_1.tpk (real data):
+//                        Correct header layout (TextureCount/NameTableOff/OffsetTableOff).
+//                        Texture block: PixOff+PalOff at +0/+4, dims at +0x44/+0x48.
+//                        Header varies: 0x80 (standard) or 0xC0 (first entry).
+//                        Two sizes verified: 256x256 (66688B) and 128x128 (17536B).
+//                        All 28 textures in tpk1_1.tpk correctly parsed.
+//     0.1.0  2026-05-22  Initial - guessed from summary only. HEADER WAS WRONG.
+//
+// ── VERIFIED FORMAT (against tpk1_1.tpk) ─────────────────────────────────────
+//
+//   FILE LAYOUT:
+//     0x00         TPAC_HEADER (16 bytes)
+//     NameTableOff TPAC_NAME_ENTRY[TextureCount]  (16 bytes each, null-padded ASCII)
+//     OffsetTableOff uint32[TextureCount]          (absolute file offsets to texture blocks)
+//     (variable)   Texture blocks, sequential
+//
+//   TPAC_HEADER (16 bytes):
+//     [0x00] 'TPAC'           magic
+//     [0x04] TextureCount     uint32, number of textures (28 for tpk1_1.tpk)
+//     [0x08] NameTableOffset  uint32, byte offset to first name entry (= 0x10)
+//     [0x0C] OffsetTableOff   uint32, byte offset to offset table
+//                             (= NameTableOffset + TextureCount * 16)
+//
+//   TEXTURE BLOCK HEADER (0x80 or 0xC0 bytes, variable):
+//     [+0x00] PixelDataOffset  uint32, abs file offset to pixel data (PAL8 swizzled)
+//     [+0x04] PaletteDataOffset uint32, abs file offset to palette (256 * BGRA8888)
+//     [+0x08] FormatFlags      uint32 = 0x00040001 (format=4=PAL8, mip_exp=1)
+//     [+0x14] PackedDims       uint32: byte[+0x17] = log2(size) (e.g. 8 = 256x256)
+//     [+0x44] Height           uint32, actual pixel height
+//     [+0x48] Width            uint32, actual pixel width
+//     [+0x4C] MipLevels        uint32 (usually 1)
+//     [+0x68..] padding zeros
+//
+//   TEXTURE PIXEL DATA (at PixelDataOffset):
+//     Width * Height bytes, PAL8 format, Xbox Morton-swizzled
+//     Decode: EA-Graphics-Manager handle_image_swizzle_logic(pix, 123, w, h, 'SHPX', False)
+//             + reversebox decode_indexed_image(unswizzled, palette, w, h, PAL8, BGRA8888)
+//
+//   PALETTE DATA (at PaletteDataOffset):
+//     256 * 4 bytes = 1024 bytes, BGRA8888 format
+//
+//   KNOWN TEXTURES in tpk1_1.tpk (28 entries):
+//     BT01, BT01C, BT02, BT21 (256x256) - Body Textures
+//     GI_256, M1SIDE_256, M1TOP_256 (256x256) - German Infantry, M1 Garand
+//     COL_CEN_256_5, COL_SID_256_4 (128x128) - Collision geometry
+//     FRAG_BODY_256, FRAG_HAN_256 (128x128) - Fragment effects
+//     GR1..GR5, HT01..HT03A (128x128) - German textures, Head textures
+//     PISTOL_GRAFT, US1..US3 (128x128) - US soldier textures
+//     US7_LEFT (64x64), US7_RIGHT (32x32) - US soldier details
+//
+//   NOTE: All textures use PAL8 format (pixel format byte at SHPX+0x70 = 123).
+//         Pixels are Xbox Morton (Z-order) swizzled. Palette is BGRA8888.
+//         The 3 tpk files (tpk1_1, tpk1_1_2, tpk1_1_3) differ only in palette data
+//         (they share the same geometry but have different skin colors).
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── File Header ───────────────────────────────────────────────────────────────
+
+typedef struct {
+    char    Magic[4]         ;  // 'TPAC'
+    uint32  TextureCount     ;  // Number of textures in this file
+    uint32  NameTableOffset  ;  // Abs offset to name table (= 0x10)
+    uint32  OffsetTableOff   ;  // Abs offset to offset table (= NameTableOff + TextureCount*16)
+} TPAC_HEADER ;  // TPAC file header, 16 bytes
+
+TPAC_HEADER Header;
+
+// ── Name Table ────────────────────────────────────────────────────────────────
+
+FSeek(Header.NameTableOffset);
+
+typedef struct {
+    char    Name[16]  ;  // Null-padded ASCII texture name
+} TPAC_NAME_ENTRY <read=ReadNameEntry>;
+
+string ReadNameEntry(TPAC_NAME_ENTRY& e) {
+    return e.Name;
+}
+
+TPAC_NAME_ENTRY Names[Header.TextureCount]
+    ;  // Texture names: BT01, HT01, US1, GR1, etc.
+
+// ── Offset Table ──────────────────────────────────────────────────────────────
+
+FSeek(Header.OffsetTableOff);
+
+uint32 TextureOffsets[Header.TextureCount]
+    <format=hex, comment="Absolute file offsets to each texture block">;
+
+// ── Texture Blocks ────────────────────────────────────────────────────────────
+
+typedef struct {
+    local quad blk_start;
+    blk_start = FTell();
+
+    uint32  PixelDataOffset   <format=hex,
+                               comment="Abs file offset to pixel data (PAL8 Morton-swizzled)">;
+    uint32  PaletteDataOffset <format=hex,
+                               comment="Abs file offset to palette (256 * BGRA8888 = 1024 bytes)">;
+    uint32  FormatFlags       <format=hex,
+                               comment="0x00040001: low16=1 (mip_exp), high16=4 (format=PAL8)">;
+    uint32  Unknown_0C;
+    uint32  Unknown_10;
+    uint32  PackedDims        <format=hex,
+                               comment="byte[3] = log2(dimension): e.g. 0x08 = 256x256, 0x07 = 128x128">;
+    uint32  Unknown_18;
+    uint32  Unknown_1C;
+    uint32  Unknown_20;
+    uint32  Unknown_24;
+    byte    Uninit[8]         ;  // 0xCC fill (debug sentinel)
+    uint32  Unknown_30;
+    uint32  Unknown_34;
+    uint32  Unknown_38;
+    uint32  Unknown_3C;
+    uint32  Unknown_40;
+    uint32  Height            ;  // Pixel height (e.g. 256, 128, 64, 32)
+    uint32  Width             ;  // Pixel width (= Height for all observed textures)
+    uint32  MipLevels         ;  // Number of mip levels (usually 1)
+    byte    Padding[PixelDataOffset - blk_start - 0x50]
+                              ;  // Zero padding to align pixel data
+
+    // Pixel data: Width * Height bytes (PAL8 Morton-swizzled)
+    local uint32 pix_size;
+    pix_size = PaletteDataOffset - PixelDataOffset;
+    byte    PixelData[pix_size]
+                              ;  // PAL8 Morton-swizzled pixel data. Decode via EA-Graphics-Manager.
+
+    // Palette: 256 * 4 bytes BGRA8888
+    byte    Palette[1024]     ;  // 256 BGRA8888 palette entries. Next texture block follows.
+
+} TPAC_TEXTURE <read=ReadTexture, optimize=false>;
+
+string ReadTexture(TPAC_TEXTURE& t) {
+    string s;
+    SPrintf(s, "%dx%d PAL8  pix@0x%06X  pal@0x%06X", t.Width, t.Height, t.PixelDataOffset, t.PaletteDataOffset);
+    return s;
+}
+
+local int ti;
+for (ti = 0; ti < Header.TextureCount; ti++) {
+    FSeek(TextureOffsets[ti]);
+    TPAC_TEXTURE Textures
+        ;  // Individual texture block
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+
+Printf("=== TPK Summary ===\n");
+Printf("File:           %s\n", GetFileName());
+Printf("Magic:          %.4s\n", Header.Magic);
+Printf("TextureCount:   %d\n", Header.TextureCount);
+Printf("File size:      %.1f KB\n", FileSize() / 1024.0);
+Printf("\n");
+Printf("Textures:\n");
+for (ti = 0; ti < Header.TextureCount; ti++) {
+    Printf("  [%2d] %-20s  %dx%d  pix@0x%06X  pal@0x%06X\n", ti, Names[ti].Name, Textures[ti].Width, Textures[ti].Height, Textures[ti].PixelDataOffset, Textures[ti].PaletteDataOffset);
+}

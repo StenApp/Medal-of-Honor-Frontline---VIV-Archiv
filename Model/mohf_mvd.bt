@@ -1,0 +1,75 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_mvd.bt
+//   Authors: Sten
+//   Version: 0.2.0
+//   Purpose: Medal of Honor Frontline - MVD Motion/Vehicle Data
+//  Category: Game
+// File Mask: *.mvd
+//  ID Bytes: 4D 56 44 00
+//   History:
+//     0.2.0  2026-05-25  Verified against 18 real files (ver=1 and ver=2 both confirmed).
+//                        Header 16 bytes. Stride 32 bytes/keyframe confirmed exact.
+//     0.1.0  2026-05-22  Initial.
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//   Header (16 bytes):
+//     [+0x00] Magic    uint32 = 0x4D564400 ('MVD\0')
+//     [+0x04] Version  uint32 = 1 or 2
+//     [+0x08] Count    uint32 = number of keyframes
+//     [+0x0C] Pad      uint32 = 0 (ver=1) or 1 (ver=2)
+//
+//   Keyframes (Count * 32 bytes):
+//     [+0x00] float  X         world position X
+//     [+0x04] float  Y         world position Y
+//     [+0x08] float  Z         world position Z
+//     [+0x0C] float  Pad       = 0
+//     [+0x10] float  QuatW     rotation quaternion W
+//     [+0x14] float  QuatX     rotation quaternion X
+//     [+0x18] float  QuatY     rotation quaternion Y
+//     [+0x1C] float  QuatZ     rotation quaternion Z
+//
+//   Ver=1: Bomb_1_1_01, P47flyby1_1, rocket_firing, etc.
+//   Ver=2: 1_1_Uboat_bobbing, house_1_1, jeep_body, tank wheels, etc.
+//   Both versions use identical keyframe layout.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+typedef struct {
+    uint32  Magic    <format=hex, comment="0x4D564400 = 'MVD\\0'">;
+    uint32  Version  ;  // 1 or 2
+    uint32  Count    ;  // Number of keyframes
+    uint32  Pad      ;  // 0 (ver=1) or 1 (ver=2)
+} MVD_HEADER;
+
+MVD_HEADER Header;
+
+typedef struct {
+    float   X;
+    float   Y;
+    float   Z;
+    float   Pad;
+    float   QuatW;
+    float   QuatX;
+    float   QuatY;
+    float   QuatZ;
+} MVD_KEYFRAME <size=32, read=ReadKeyframe>;
+
+string ReadKeyframe(MVD_KEYFRAME& k) {
+    string s;
+    SPrintf(s, "pos=(%.2f,%.2f,%.2f)  q=(%.3f,%.3f,%.3f,%.3f)", k.X, k.Y, k.Z, k.QuatW, k.QuatX, k.QuatY, k.QuatZ);
+    return s;
+}
+
+MVD_KEYFRAME Keyframes[Header.Count];
+
+Printf("=== MVD Summary ===\n");
+Printf("Version:   %d\n", Header.Version);
+Printf("Keyframes: %d\n", Header.Count);
+Printf("Duration:  %.2f s (at 30 fps)\n", Header.Count / 30.0);
+Printf("File size: %d bytes\n", FileSize());
