@@ -1,0 +1,57 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_weapbul.bt
+//   Authors: Sten + Claude
+//   Version: 0.1.0
+//   Purpose: Medal of Honor Frontline - weapbul Weapon Ballistics Data
+//  Category: Game
+// File Mask: weapbul*.dat
+//   History:
+//     0.1.0  2026-05-27  Initial. 45 entries × 84B confirmed.
+//
+// weapbul_easy/medium/hard/mp.dat = weapon ballistics per difficulty.
+// 45 weapons × 84B entries. Each entry defines bullet behavior for one weapon.
+// References weapon mesh by name (MSH filename in uppercase).
+//
+// Entry field at +0x10 appears to be a damage/velocity float value.
+// type field at +0x04 appears to be sequential (0,1,2,3... per difficulty variant).
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+uint32  WeaponCount;    // = 45
+uint32  Field_04;       // = 31 (variant count?)
+
+typedef struct {
+    uint32  WeaponID    <comment="weapon identifier, 0=unused">;
+    uint32  TypeSeq     <comment="sequential type index">;
+    uint32  RuntimePtr  <format=hex, comment="patched at runtime, 0 in file">;
+    uint16  Field_0C_lo;
+    uint16  Field_0C_hi;
+    float   BulletValue <comment="damage or velocity parameter">;
+    uint16  Field_14_lo;
+    uint16  Field_14_hi;
+    uint16  Field_18_lo;
+    uint16  Field_18_hi;
+    uint32  Field_1C;
+    char    MeshName[32] <comment="weapon mesh filename e.g. ENEMYWEBLEY.MSH">;
+    byte    Remainder[8];
+} WEAPBUL_ENTRY <read=ReadEntry, size=84>;
+
+string ReadEntry(WEAPBUL_ENTRY& e) {
+    string s;
+    SPrintf(s, "%-22s  val=%.2f", e.MeshName, e.BulletValue);
+    return s;
+}
+
+WEAPBUL_ENTRY Weapons[WeaponCount];
+
+Printf("=== weapbul Summary ===\n");
+Printf("Weapons: %d\n", WeaponCount);
+local int i;
+for (i=0; i<WeaponCount; i++) {
+    if (Weapons[i].WeaponID != 0)
+        Printf("  [%2d] %-24s val=%.2f\n", i, Weapons[i].MeshName, Weapons[i].BulletValue);
+}

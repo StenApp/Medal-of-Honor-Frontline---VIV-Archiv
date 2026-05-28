@@ -3,7 +3,7 @@
 //
 //      File: mof_emt.bt
 //   Authors: Sten
-//   Version: 1.1.0
+//   Version: 1.2.0
 //   Purpose: Medal of Honor Frontline - EMT Entity Motion Table
 //  Category: Game
 // File Mask: *.emt
@@ -11,13 +11,28 @@
 //
 // ── FORMAT ───────────────────────────────────────────────────────────────────
 //
-//   Header (32B): Magic=0x454D5400 Version=1 EntityCount OffA OffB OffC
+//   Header (32B): Magic=0x454D5400 Version=1 Pad EntityCount OffA OffB OffC Pad2
 //
-//   Section A Prolog (0x20..OffC): 158 variable records
-//     type(u16) + size(u16) + payload
-//     type2(32B): X/Y/Z fp/65536 + Unk + Yf + sin/cos heading
-//     type9(36B): AI/LOD config
-//     type5(12B): misc   type11(12B): aux config
+//   Section A Prolog (0x20..OffC, ~158 records):
+//     type(u16) + size(u16) + payload[size]
+//
+//     type2 (size=32, payload 32B from record-start +4):
+//       [+00..+07] Pad1, Pad2   = 0
+//       [+08]      X_fp  int32  = X * 65536  (level game-units, range 0..255)
+//       [+0C]      Y_fp  int32  = Y * 65536  (level game-units, range 0..255)
+//       [+10]      Z_fp  int32  = Z * 65536  (level game-units, range ~16800..17064)
+//       [+14]      Yf    float  = heading parameter
+//       [+18]      SinH  float  = sin(heading)
+//       [+1C]      CosH  float  = cos(heading)
+//
+//     → This is WorldPos for placed objects WITHOUT CBS/SIN
+//       (e.g. house_chunk_1_1_01.msh, house_chunk_1_1_02.msh)
+//     → house_chunk MSH has local-space vertices; WorldPos comes from here
+//     → 29 type2 records in emt_1_1.emt
+//
+//     type9  (size=36): AI/LOD config
+//     type5  (size=12): misc config
+//     type11 (size=12): aux config
 //
 //   Section C (OffC):
 //     LevelLoopFrames(u32) + EntityOffsets(u32[EntityCount+1])
@@ -38,12 +53,22 @@
 //   Section A Table (OffA):
 //     Count(u32) + Count*20B: EntityIdx(u16)+TypeID(u16)+AbsPtr+PrologCfgOff+DataSize+Pad
 //
+//   NOTE: LEKS blocks do NOT contain WorldPos.
+//         WorldPos is ONLY in Section A Prolog type2 records.
+//         SIN/CBS files do NOT contain placement data.
+//
+//   History:
+//     1.2.0  2026-05-28  Corrected type2 field offsets (+08=X, +0C=Y, +10=Z).
+//                        Confirmed 29 type2 records in emt_1_1.emt.
+//                        Confirmed house_chunk MSH uses type2 WorldPos.
+//                        Confirmed SIN/CBS/MVD contain NO placement data.
+//     1.1.0  2026-05-25  LEKS structure, Section B/C parsing.
+//     1.0.0  2026-05-22  Initial.
+//
 //------------------------------------------------
 
 LittleEndian();
 OutputPaneClear();
-
-// ── Typedefs ──────────────────────────────────────────────────────────────────
 
 typedef struct {
     uint32 Magic       <format=hex>;
@@ -57,24 +82,35 @@ typedef struct {
 } EMT_HEADER;
 
 typedef struct {
-    float X; float Y; float Z; float Unk;
-    float Yf; float SinH; float CosH; float Pad;
-} A_TYPE2;
+    uint32 Pad1;       // always 0
+    uint32 Pad2;       // always 0
+    int32  X_fp;       // X * 65536 (level units)
+    int32  Y_fp;       // Y * 65536 (level units)
+    int32  Z_fp;       // Z * 65536 (level units, ~16800..17064)
+    float  Yf;         // heading parameter
+    float  SinH;       // sin(heading)
+    float  CosH;       // cos(heading)
+} A_TYPE2_PAYLOAD;
 
 typedef struct {
     uint16 Type;
     uint16 Size;
-    if (Type == 2 && Size == 32)      A_TYPE2 WorldPos;
-    else if (Type == 9  && Size == 36) byte LODConfig[36];
-    else if (Type == 5  && Size == 12) byte MiscConfig[12];
-    else if (Type == 11 && Size == 12) byte AuxConfig[12];
-    else if (Size > 0)                 byte Raw[Size];
+    if (Type == 2 && Size == 32) {
+        A_TYPE2_PAYLOAD WorldPos;
+    } else if (Type == 9  && Size == 36) { byte LODConfig[36]; }
+    else if (Type == 5  && Size == 12) { byte MiscConfig[12]; }
+    else if (Type == 11 && Size == 12) { byte AuxConfig[12]; }
+    else if (Size > 0)                 { byte Raw[Size]; }
 } A_REC <read=ReadARec, optimize=false>;
+
 string ReadARec(A_REC& r) {
     string s;
-    if (r.Type == 2)
-        SPrintf(s, "type2  pos=(%.1f,%.1f,%.1f) hdg=(%.3f,%.3f)", r.WorldPos.X, r.WorldPos.Y, r.WorldPos.Z, r.WorldPos.SinH, r.WorldPos.CosH);
-    else if (r.Type == 9)  SPrintf(s, "type9  AI/LOD  size=%d", r.Size);
+    if (r.Type == 2) {
+        local float x = r.WorldPos.X_fp / 65536.0;
+        local float y = r.WorldPos.Y_fp / 65536.0;
+        local float z = r.WorldPos.Z_fp / 65536.0;
+        SPrintf(s, "type2  pos=(%.2f,%.2f,%.2f) sin=%.4f cos=%.4f", x, y, z, r.WorldPos.SinH, r.WorldPos.CosH);
+    } else if (r.Type == 9)  SPrintf(s, "type9  AI/LOD  size=%d", r.Size);
     else if (r.Type == 5)  SPrintf(s, "type5  Misc    size=%d", r.Size);
     else if (r.Type == 11) SPrintf(s, "type11 Aux     size=%d", r.Size);
     else                   SPrintf(s, "type%d          size=%d", r.Type, r.Size);
@@ -110,29 +146,18 @@ string ReadATE(A_TABLE_ENTRY& e) {
     return s;
 }
 
-typedef struct {
-    uint32 Tag         <format=hex>;
-    uint32 BoneDataPtr <format=hex>;
-    uint32 NextLEKSPtr <format=hex>;
-    uint32 BoneCount;
-    uint32 Pad;
-} LEKS_HDR <read=ReadLH>;
-string ReadLH(LEKS_HDR& h) {
-    string s;
-    SPrintf(s, "LEKS  bones=%d  BoneDataPtr=0x%X  next=0x%X", h.BoneCount, h.BoneDataPtr, h.NextLEKSPtr);
-    return s;
-}
-
 // ── Parse ─────────────────────────────────────────────────────────────────────
 
 EMT_HEADER Header;
 
 // Section A prolog
 local uint32 rpos = 0x20;
+local int type2_count = 0;
 while (rpos + 4 <= Header.OffC) {
     FSeek(rpos);
     if (ReadUShort(rpos) == 0 && ReadUShort(rpos + 2) == 0) break;
     A_REC APRec;
+    if (APRec.Type == 2) type2_count++;
     rpos = FTell();
 }
 
@@ -141,19 +166,6 @@ FSeek(Header.OffC);
 uint32 LevelLoopFrames;
 uint32 EntityOffsets[Header.EntityCount + 1] <format=hex>;
 
-local uint32 EntityDataBase = Header.OffC + 4 + (Header.EntityCount + 1) * 4;
-local uint32 eBones         = 0;
-local int    i              = 0;
-
-// First 10 entity samples
-for (i = 0; i < 10; i++) {
-    eBones = (EntityOffsets[i+1] - EntityOffsets[i] - 4) / 6;
-    FSeek(EntityDataBase + EntityOffsets[i]);
-    ENTITY_HDR EntityHdr;
-    FSkip(eBones * 6);
-    Printf("  Entity[%d]: bones=%d\n", i, eBones);
-}
-
 // Section B
 FSeek(Header.OffB);
 uint32 SkelCount;
@@ -161,27 +173,8 @@ uint32 BRecordPtrs[SkelCount] <format=hex>;
 
 local uint32 BExtraBase  = Header.OffB + 4 + SkelCount * 4;
 local uint32 BExtraCount = (Header.OffA - BExtraBase) / 12;
-
 FSeek(BExtraBase);
 B_EXTRA BExtraArray[BExtraCount];
-
-// LEKS blocks
-// LEKS blocks: read via loop using Printf (FSeek incompatible with arrays)
-local uint32 g_llp2   = 0;
-local uint32 g_lbdp   = 0;
-local uint32 g_lbcnt  = 0;
-local int    g_li2    = 0;
-for (g_li2 = 0; g_li2 < (int)SkelCount; g_li2++) {
-    g_llp2  = ReadUInt(BRecordPtrs[g_li2] + 4);
-    g_lbcnt = ReadUInt(g_llp2 + 12);
-    g_lbdp  = ReadUInt(g_llp2 + 4);
-    Printf("  LEKS[%d]: tag=0x%X bones=%d BoneDataPtr=0x%X next=0x%X\n",
-        g_li2,
-        ReadUInt(g_llp2),
-        g_lbcnt,
-        g_lbdp,
-        ReadUInt(g_llp2 + 8));
-}
 
 // Section A table
 FSeek(Header.OffA);
@@ -195,3 +188,4 @@ Printf("LevelLoopFrames: %d (%.1fs)\n", LevelLoopFrames, LevelLoopFrames / 30.0)
 Printf("SkelCount:       %d\n", SkelCount);
 Printf("BExtraCount:     %d\n", BExtraCount);
 Printf("SectionAEntries: %d\n", SectionACount);
+Printf("Type2 WorldPos:  %d records\n", type2_count);

@@ -1,0 +1,258 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_cdb.bt
+//   Authors: Sten + Claude
+//   Version: 0.2.0
+//   Purpose: Medal of Honor Frontline - CDB Collision Data Block
+//  Category: Game
+// File Mask: *.cdb
+//  ID Bytes: 07 00 00 00
+//   History:
+//     0.2.0  2026-05-28  All four sections fully documented.
+//                        SecA EdgeList (edge_count × 16B) confirmed.
+//                        SecB PolyPlaneList (variable, float4+refs) confirmed.
+//                        SecC LeafList (32B header + 2×16B planes + refs) confirmed.
+//                        SecD BSPNodeList (node_count × 28B) confirmed.
+//                        All section sizes exact across all 7 chunks of level 1_1.
+//     0.1.0  2026-05-27  Initial - vertex buffer + triangle ptr-list confirmed.
+//
+// ── FORMAT OVERVIEW ──────────────────────────────────────────────────────────
+//
+//   Little-Endian. CDB = Collision Data Block.
+//   Companion to BPD (render geometry). One CDB per chunk, plus a master stub.
+//   Contains world-space geometry with walls (Z up to ~23m).
+//   BPD has floor/ceiling only (Z range ~4m); CDB has full 3D.
+//
+// ── HEADER (56 bytes = 14 × uint32) ─────────────────────────────────────────
+//
+//   [00] Version    = 7
+//   [04] FileSize   = total file size in bytes
+//   [08] VtxCount   = number of world-space vertices
+//   [0C] Const116   = always 116 (0x74) across all chunks
+//   [10] EdgeCount  = number of edges (SecA entries)
+//   [14] PolyCount  = number of collision polygons (SecB entries)
+//   [18] LeafCount  = number of BSP leaf nodes (SecC entries)
+//   [1C] NodeCount  = number of BSP internal nodes (SecD entries)
+//   [20] Reserved   = 0
+//   [24] SecA_Off   = offset to EdgeList
+//   [28] SecB_Off   = offset to PolyPlaneList
+//   [2C] SecC_Off   = offset to LeafList
+//   [30] SecD_Off   = offset to BSPNodeList
+//   [34] Reserved2  = 0
+//
+// ── VTX BUFFER (0x38 .. SecA_Off) ────────────────────────────────────────────
+//
+//   (VtxCount + 5) × 12B = float3 world-space positions
+//   The 5 extra vertices are referenced by SecA but not counted in VtxCount.
+//   VtxPtr (used in SecA/SecB) = absolute file offset = 0x38 + idx * 12
+//
+// ── SECA: EdgeList (SecA_Off, EdgeCount × 16B) ───────────────────────────────
+//
+//   Each edge:
+//     [+00] VtxPtr0  uint32  abs file offset → vertex[0]  (= 0x38 + idx0*12)
+//     [+04] VtxPtr1  uint32  abs file offset → vertex[1]  (= 0x38 + idx1*12)
+//     [+08] PlaneA   float   plane coefficient A
+//     [+0C] PlaneB   float   plane coefficient B
+//
+// ── SECB: PolyPlaneList (SecB_Off, PolyCount × variable) ─────────────────────
+//
+//   Each polygon entry (variable length):
+//     [+00] Nx      float   plane normal X
+//     [+04] Ny      float   plane normal Y
+//     [+08] Nz      float   plane normal Z
+//     [+0C] D       float   plane distance
+//     [+10] RefCnt  uint32  number of SecA edge references
+//     [+14..] EdgeRefs  uint32[RefCnt]  abs offsets into SecA
+//   Total entry size = 20 + RefCnt × 4
+//
+// ── SECC: LeafList (SecC_Off, LeafCount × variable) ──────────────────────────
+//
+//   Each BSP leaf entry (variable length):
+//     [+00] Unk       uint32    = 2 (leaf type or plane count flag)
+//     [+04] CentroidX float     world-space centroid X (range ~2..220)
+//     [+08] CentroidY float     world-space centroid Y (range ~2..146)
+//     [+0C] CentroidZ float     world-space centroid Z (range ~2..20)
+//     [+10] Plane0N   float[3]  first bounding plane normal (unit vector)
+//     [+1C] Plane0D   float     first bounding plane distance
+//     [+20] Plane1N   float[3]  second bounding plane normal (unit vector)
+//     [+2C] Plane1D   float     second bounding plane distance (often 0)
+//     --- above = 32B fixed header ---
+//     [+30] PolyData  byte[32]  2 × 16B collision polygon data (always 2)
+//     [+50] SecBRefCnt uint32   number of SecB polygon references
+//     [+54..] SecBRefs  uint32[SecBRefCnt]  abs offsets into SecB
+//   Total entry size = 84 + SecBRefCnt × 4
+//
+// ── SECD: BSPNodeList (SecD_Off, NodeCount × 28B) ────────────────────────────
+//
+//   Each axis-aligned BSP internal node (28B = 7 × uint32):
+//     [+00] NodeType  uint32    = 1 (always)
+//     [+04] ChildL    uint32    abs file offset → left child  (SecD or SecC)
+//     [+08] ChildR    uint32    abs file offset → right child (SecD or SecC)
+//     [+0C] AxisX     float     1.0 if split on X axis, else 0.0
+//     [+10] AxisY     float     1.0 if split on Y axis, else 0.0
+//     [+14] AxisZ     float     1.0 if split on Z axis, else 0.0
+//     [+18] SplitVal  float     split plane position on the chosen axis
+//
+//   To determine child type: compare child offset to SecC_Off
+//     child >= SecC_Off  → points into LeafList (SecC)
+//     child <  SecC_Off  → points into NodeList (SecD) → recurse
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Header ───────────────────────────────────────────────────────────────────
+
+typedef struct {
+    uint32  Version     <comment="always 7">;
+    uint32  FileSize;
+    uint32  VtxCount    <comment="vertices in VtxBuffer (excludes 5 extra)">;
+    uint32  Const116    <format=hex, comment="always 0x74=116">;
+    uint32  EdgeCount   <comment="SecA entries">;
+    uint32  PolyCount   <comment="SecB entries">;
+    uint32  LeafCount   <comment="SecC BSP leaf entries">;
+    uint32  NodeCount   <comment="SecD BSP node entries">;
+    uint32  Reserved    <hidden=true>;
+    uint32  SecA_Off    <format=hex>;
+    uint32  SecB_Off    <format=hex>;
+    uint32  SecC_Off    <format=hex>;
+    uint32  SecD_Off    <format=hex>;
+    uint32  Reserved2   <hidden=true>;
+} CDB_HEADER;
+
+// ── Vertex buffer ─────────────────────────────────────────────────────────────
+
+typedef struct {
+    float X, Y, Z;
+} CDB_VERTEX <read=ReadVtx>;
+
+string ReadVtx(CDB_VERTEX& v) {
+    string s; SPrintf(s, "(%.2f,%.2f,%.2f)", v.X, v.Y, v.Z); return s;
+}
+
+// ── SecA: EdgeList ────────────────────────────────────────────────────────────
+
+typedef struct {
+    uint32 VtxPtr0  <format=hex>;
+    uint32 VtxPtr1  <format=hex>;
+    float  PlaneA;
+    float  PlaneB;
+} CDB_EDGE <read=ReadEdge>;
+
+string ReadEdge(CDB_EDGE& e) {
+    string s;
+    local int i0 = (e.VtxPtr0 - 0x38) / 12;
+    local int i1 = (e.VtxPtr1 - 0x38) / 12;
+    SPrintf(s, "v[%d]→v[%d] A=%.3f B=%.3f", i0, i1, e.PlaneA, e.PlaneB);
+    return s;
+}
+
+// ── SecB: PolyPlaneList (variable stride) ─────────────────────────────────────
+
+typedef struct {
+    float  Nx, Ny, Nz, D;
+    uint32 RefCnt;
+    if (RefCnt > 0)
+        uint32 EdgeRefs[RefCnt] <format=hex>;
+} CDB_POLY <read=ReadPoly, optimize=false>;
+
+string ReadPoly(CDB_POLY& p) {
+    string s;
+    SPrintf(s, "n=(%.3f,%.3f,%.3f) d=%.3f refs=%d", p.Nx, p.Ny, p.Nz, p.D, p.RefCnt);
+    return s;
+}
+
+// ── SecC: LeafList (variable stride) ──────────────────────────────────────────
+
+typedef struct {
+    // 32B fixed header
+    uint32 Unk          <comment="always 2">;
+    float  CentroidX;
+    float  CentroidY;
+    float  CentroidZ;
+    float  Plane0Nx, Plane0Ny, Plane0Nz, Plane0D;
+    // then 2 × 16B polygon data
+    byte   PolyData[32] <comment="2 × 16B collision polygon entries">;
+    // variable refs into SecB
+    uint32 SecBRefCnt;
+    if (SecBRefCnt > 0)
+        uint32 SecBRefs[SecBRefCnt] <format=hex>;
+} CDB_LEAF <read=ReadLeaf, optimize=false>;
+
+string ReadLeaf(CDB_LEAF& l) {
+    string s;
+    SPrintf(s, "centroid=(%.1f,%.1f,%.1f) refs=%d", l.CentroidX, l.CentroidY, l.CentroidZ, l.SecBRefCnt);
+    return s;
+}
+
+// ── SecD: BSPNodeList ─────────────────────────────────────────────────────────
+
+typedef struct {
+    uint32 NodeType     <comment="always 1">;
+    uint32 ChildL       <format=hex, comment="abs offset into SecD or SecC">;
+    uint32 ChildR       <format=hex, comment="abs offset into SecD or SecC">;
+    float  AxisX        <comment="1.0 if split axis is X">;
+    float  AxisY        <comment="1.0 if split axis is Y">;
+    float  AxisZ        <comment="1.0 if split axis is Z">;
+    float  SplitVal     <comment="split plane position on chosen axis">;
+} CDB_NODE <read=ReadNode>;
+
+string ReadNode(CDB_NODE& n) {
+    string s;
+    local char axis = 'X';
+    if (n.AxisY > 0.5) axis = 'Y';
+    else if (n.AxisZ > 0.5) axis = 'Z';
+    SPrintf(s, "%c=%.2f  L@0x%X  R@0x%X", axis, n.SplitVal, n.ChildL, n.ChildR);
+    return s;
+}
+
+// ── Main parse ────────────────────────────────────────────────────────────────
+
+CDB_HEADER Header;
+
+// Vertex buffer: VtxCount + 5 vertices
+CDB_VERTEX Vertices[Header.VtxCount + 5];
+
+// SecA
+FSeek(Header.SecA_Off);
+CDB_EDGE Edges[Header.EdgeCount];
+
+// SecB
+FSeek(Header.SecB_Off);
+CDB_POLY Polys[Header.PolyCount];
+
+// SecC
+FSeek(Header.SecC_Off);
+CDB_LEAF Leaves[Header.LeafCount];
+
+// SecD
+FSeek(Header.SecD_Off);
+CDB_NODE Nodes[Header.NodeCount];
+
+// ── Summary ──────────────────────────────────────────────────────────────────
+
+Printf("=== CDB Summary ===\n");
+Printf("Version:    %d\n", Header.Version);
+Printf("FileSize:   %d B\n", Header.FileSize);
+Printf("VtxCount:   %d (+5 extra)\n", Header.VtxCount);
+Printf("EdgeCount:  %d × 16B\n", Header.EdgeCount);
+Printf("PolyCount:  %d (variable)\n", Header.PolyCount);
+Printf("LeafCount:  %d (variable)\n", Header.LeafCount);
+Printf("NodeCount:  %d × 28B\n", Header.NodeCount);
+Printf("\nSections:\n");
+Printf("  VtxBuf:  0x38   .. 0x%X\n", Header.SecA_Off);
+Printf("  SecA:    0x%X .. 0x%X  (%d × 16B = %d)\n",
+    Header.SecA_Off, Header.SecB_Off,
+    Header.EdgeCount, Header.EdgeCount*16);
+Printf("  SecB:    0x%X .. 0x%X  (variable)\n", Header.SecB_Off, Header.SecC_Off);
+Printf("  SecC:    0x%X .. 0x%X  (variable)\n", Header.SecC_Off, Header.SecD_Off);
+Printf("  SecD:    0x%X .. EOF  (%d × 28B = %d)\n",
+    Header.SecD_Off, Header.NodeCount, Header.NodeCount*28);
+Printf("\nSample vertices (first 3):\n");
+Printf("  [0] (%.2f, %.2f, %.2f)\n", Vertices[0].X, Vertices[0].Y, Vertices[0].Z);
+Printf("  [1] (%.2f, %.2f, %.2f)\n", Vertices[1].X, Vertices[1].Y, Vertices[1].Z);
+Printf("  [2] (%.2f, %.2f, %.2f)\n", Vertices[2].X, Vertices[2].Y, Vertices[2].Z);
+Printf("\nSample BSP root node:\n");
+Printf("  Node[0]: %s\n", ReadNode(Nodes[0]));

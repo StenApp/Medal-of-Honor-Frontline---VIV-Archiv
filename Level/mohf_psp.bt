@@ -2,103 +2,154 @@
 //--- 010 Editor Binary Template
 //
 //      File: mohf_psp.bt
-//   Authors: Sten
-//   Version: 0.1.0
-//   Purpose: Medal of Honor Frontline - PSP Physics BSP (Collision)
+//   Authors: Sten + Claude
+//   Version: 0.2.0
+//   Purpose: Medal of Honor Frontline - PSP Path-finding BSP
 //  Category: Game
 // File Mask: *.psp
-//  ID Bytes: 50 42 53 50 5f 48 45 41 44 45 52
+//  ID Bytes: 50 42 53 50 5F 48 45 41 44 45 52
 //   History:
-//     0.1.0  2026-05-24  Initial. Full structure decoded:
-//                        6 BSP split-plane sections; face index lists per leaf;
-//                        collision geometry is separate from render geometry (BPD).
-//                        NO render material assignment in PSP.
+//     0.2.0  2026-05-27  Corrected: PSP = Path-finding BSP (AI navigation),
+//                        NOT physics collision. Edge format decoded.
+//                        Nav polygon sentinel identified (0xFE967699).
+//     0.1.0  2026-05-24  Initial structure.
 //
 // ── FORMAT NOTES ─────────────────────────────────────────────────────────────
 //
-//  PSP = Physics BSP. Companion file to BPD (same basename, different extension).
-//  Contains collision geometry for the level sector.
-//  Does NOT contain render material assignments or diffuse UV data.
+//  PSP = PBSP = Path-finding BSP.
+//  Contains the AI navigation mesh for soldier pathfinding.
+//  NOT collision geometry (that is in the companion _C_c*.cdb files).
+//  NOT render geometry (that is in the companion _P.bpd file).
 //
-//  FILE LAYOUT:
-//    [0x00..0x0B]  Magic: "PBSP_HEADER\0" (12 bytes)
-//    [0x0C..0x1B]  Runtime pointers (Xbox heap addresses, pre-linked, not useful offline)
-//    [0x1C..0x1F]  Runtime pointer
-//    [0x20]        uint32 SectionCount = 6 (valid BSP split sections)
-//    [0x24]        uint32 SectionOffset = 0x28 (offset to first section)
-//    [0x28..]      BSP_SECTION[SectionCount] (16 bytes each)
-//    After sections: collision face index lists (uint16 pairs)
-//    Later in file: collision vertex data (float3 positions)
+//  Each BSP section corresponds to a Z-level (floor height) in the level.
+//  The 6 PlaneD values are the floor Z heights at which AI can navigate:
+//    e.g. -13.35, -1.99, 12.98, 19.90, 25.33, 69.30 for 1_1_P
+//  These match entries in the BPD BSP_PLANE pool.
 //
-//  BSP_SECTION (16 bytes):
-//    [+00] float  PlaneD       BSP split-plane distance (D value of Ax+By+Cz=D)
-//    [+04] uint32 NextOffset   absolute offset to next section (= current + 16)
-//    [+08] uint32 FaceCount    size of face index data (in uint16 units? or bytes?)
-//    [+0C] uint32 Flags        0x00400000 / 0x00120000 / 0 (section type flags)
+//  File companions (same base name):
+//    _P.bpd   → render geometry (floor/ceiling)
+//    _C_c*.cdb → collision geometry (walls/floors/ceilings)
+//    _P.psp   → THIS FILE: AI pathfinding navigation mesh
 //
-//  The 6 PlaneD values correspond to the 6 BSP split planes that partition
-//  the sector. These same values appear in the BPD BSP_PLANE pool.
+// ── FILE LAYOUT ──────────────────────────────────────────────────────────────
 //
-//  Face index data: uint16 pairs forming collision polygon edge lists.
-//  Values are sequential vertex indices (ascending runs indicate face boundaries).
+//  [0x00..0x0B]  Magic: "PBSP_HEADER\0"
+//  [0x0C..0x1B]  4× runtime pointers (Xbox heap addresses, pre-linked)
+//  [0x1C..0x1F]  Runtime pointer
+//  [0x20]        SectionCount  = 6 valid BSP sections (0x0B in header = 11 but 5 are padding)
+//  [0x24]        SectionOffset = 0x28
+//  [0x28..0x87]  6 × BSP_SECTION (16B each)
+//  [0x88..]      Nav polygon data: variable-length records separated by sentinel 0xFE967699
 //
-//  NOTE: The PSP contains ONLY collision geometry. Surface type flags (Flags field)
-//  indicate material category for sound/gameplay (solid, water, trigger) but
-//  do NOT reference CPT render textures.
+// ── BSP SECTION (16B) ────────────────────────────────────────────────────────
+//
+//  [+00] float   PlaneD     Z height of this navigation floor level
+//  [+04] uint32  NextOff    absolute file offset to next section (+16)
+//  [+08] uint32  DataCount  byte count of nav polygon data for this level
+//  [+0C] uint32  Flags      0x400000=main level, 0x120000=alt level, 0=leaf, 0x101=last
+//
+// ── NAV POLYGON RECORD ───────────────────────────────────────────────────────
+//
+//  Records are separated by sentinel value 0xFE967699.
+//  Each record contains:
+//    - PlaneD  (float): Z level this polygon belongs to (= one of the 6 section PlaneD values)
+//    - 5× PtrOffset (uint32): absolute file offsets to sub-structures within this record
+//    - EdgeCount (uint32)
+//    - EdgeList: EdgeCount × uint32 packed as: (neighbor_poly_idx << 16) | vertex_idx
+//        neighbor_poly_idx = index of adjacent nav polygon (0xFFFF = boundary/no neighbor)
+//        vertex_idx        = index into global vertex list
+//    - Additional adjacency data (uint16 packed pairs: consecutive vertex pairs)
+//    - World-space float3 centroid of the polygon
+//
+// ── EDGE FORMAT ──────────────────────────────────────────────────────────────
+//
+//  uint32 edge = (neighbor << 16) | vertex
+//  neighbor: index of adjacent nav polygon sharing this edge (0xFFFF = boundary)
+//  vertex:   index into the navigation vertex pool
+//
+//  Example: 0x00030008 → neighbor=3, vertex=8
+//           0xFFFF0438 → no neighbor (boundary edge), vertex=0x438
+//
+// ── KNOWN VALUES ─────────────────────────────────────────────────────────────
+//
+//  Level 1_1_P PlaneD values (Z floor heights):
+//    19.902  (outdoor terrain level)
+//    69.301  (high structure / roof)
+//   -13.353  (underground / basement)
+//    38.708  (elevated structure)
+//   -26.093  (deep underground)
+//    25.332  (upper floor / 2nd storey)
+//
+//  Sentinel: 0xFE967699 separates nav polygon records
 //
 //------------------------------------------------
 
 LittleEndian();
 OutputPaneClear();
 
-// ── Magic ─────────────────────────────────────────────────────────────────────
+// ── Header ───────────────────────────────────────────────────────────────────
 
-char Magic[12] ;  // 'PBSP_HEADER\\0'
-
-// ── Runtime Pointers (pre-linked Xbox addresses, not useful offline) ──────────
-
-uint32 RuntimePtr0 <format=hex, comment="Xbox heap ptr (runtime only)">;
-uint32 RuntimePtr1 <format=hex>;
-uint32 RuntimePtr2 <format=hex>;
-uint32 RuntimePtr3 <format=hex>;
+char    Magic[12];                          // "PBSP_HEADER\0"
+uint32  RuntimePtr0 <format=hex>;
+uint32  RuntimePtr1 <format=hex>;
+uint32  RuntimePtr2 <format=hex>;
+uint32  RuntimePtr3 <format=hex>;
+uint32  RuntimePtr4 <format=hex>;
+uint32  SectionCount;                       // = 6 valid sections (raw value = 11)
+uint32  SectionOffset <format=hex>;         // = 0x28
 
 // ── BSP Section Table ─────────────────────────────────────────────────────────
 
-uint32 SectionCount ;  // = 6 valid BSP split sections (11 header entries total but only 6 valid)
-uint32 SectionOffset <format=hex, comment="= 0x28, offset to first section">;
-
 typedef struct {
-    float  PlaneD       ;  // BSP split-plane D value (same values in BPD PlanePool)
-    uint32 NextOffset   <format=hex, comment="absolute offset to next section (= current + 16)">;
-    uint32 DataCount    ;  // size of collision face data for this spatial partition
-    uint32 Flags        <format=hex>;  // 0x00400000=section0 0x00120000=section1 0=leaf. Surface: 0=solid 1=trigger 2=water
+    float   PlaneD      ;           // Z floor height for this navigation level
+    uint32  NextOff     <format=hex, comment="abs offset to next section = this+16">;
+    uint32  DataCount   ;           // byte count of nav polygon data for this level
+    uint32  Flags       <format=hex, comment="0x400000=main 0x120000=alt 0=leaf 0x101=last">;
 } BSP_SECTION <read=ReadSection, size=16>;
 
 string ReadSection(BSP_SECTION& s) {
     string str;
-    SPrintf(str, "D=%.3f  count=%d  flags=0x%X", s.PlaneD, s.DataCount, s.Flags);
+    SPrintf(str, "Z=%.3f  bytes=%d  flags=0x%X", s.PlaneD, s.DataCount, s.Flags);
     return str;
 }
 
 FSeek(SectionOffset);
 BSP_SECTION Sections[SectionCount];
 
-// ── Remaining data: collision face lists + vertex data ────────────────────────
+// ── Nav Polygon Data ──────────────────────────────────────────────────────────
+//
+// Variable-length records, each preceded by sentinel 0xFE967699.
+// Structure per record (approximate, partially decoded):
+//   float   PlaneD          which Z level this polygon is on
+//   uint32  PtrA,B,C,D,E   internal offsets to sub-structures
+//   uint32  EdgeCount
+//   uint32  Edges[EdgeCount]  packed (neighbor<<16 | vertex)
+//   ... additional adjacency data ...
+//   float3  Centroid         world-space center of polygon
+//
+// Full decode requires following the 5 internal pointers.
+// The data after all nav polygons contains the navigation vertex pool (float3 positions).
 
 local quad data_start = FTell();
 local quad data_size  = FileSize() - data_start;
-byte CollisionData[data_size]
-;  // Collision face index lists (uint16 pairs = edge adjacency) followed by collision vertex positions (float3). Total collision triangles: sum of section DataCounts. Vertex positions match BPD world-space coordinate system.
+
+byte NavData[data_size] <comment="Nav polygon records (sentinel=0xFE967699) + vertex pool">;
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 
-Printf("=== PSP Summary ===\ ");
-Printf("Magic:          %s\ ", Magic);
-Printf("Section count:  %d BSP split partitions\ ", SectionCount);
-Printf("Split planes:\ ");
+Printf("=== PSP Summary ===\n");
+Printf("Magic:          %s\n", Magic);
+Printf("Type:           Path-finding BSP (AI navigation mesh)\n");
+Printf("Section count:  %d Z-level partitions\n", SectionCount);
+Printf("\nNavigation floor levels (PlaneD = Z height):\n");
 local int i;
 for (i = 0; i < SectionCount; i++) {
-    Printf("  [%d] PlaneD=%.3f  count=%d  flags=0x%08X\ ", i, Sections[i].PlaneD, Sections[i].DataCount, Sections[i].Flags);
+    Printf("  [%d] Z=%.3f  dataBytes=%d  flags=0x%08X\n",
+           i, Sections[i].PlaneD, Sections[i].DataCount, Sections[i].Flags);
 }
-Printf("\ NOTE: Collision geometry only. No render material assignment.\ ");
-Printf("NOTE: PlaneD values correspond to BPD BSP_PLANE pool entries.\ ");
+Printf("\nNav polygon sentinel: 0xFE967699\n");
+Printf("Edge format: uint32 = (neighbor_poly_idx<<16) | vertex_idx\n");
+Printf("  neighbor=0xFFFF = boundary (no adjacent polygon)\n");
+Printf("\nNOTE: This is AI PATHFINDING data, not collision or render geometry.\n");
+Printf("NOTE: Collision = _C_c*.cdb files\n");
+Printf("NOTE: Render    = _P.bpd file\n");

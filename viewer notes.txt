@@ -1,0 +1,4 @@
+py -m pip install glfw PyOpenGL PyOpenGL_accelerate pillow numpy
+
+Was funktioniert — BPD Terrain, CDB Wireframe, CPT Texturen, MSH additiv, Level-Folder-Auto-Load, alle Levels crash-frei.
+Was als nächstes ansteht — MSH WorldPos via EMT (Format komplett dokumentiert, Transformation approximiert), BPD Texturierung (SubMesh-Centroid-Matching ist drin, Tex-Index-Alignment fehlt noch), restliche BPD Strip-Artefakte (A,?,A Restart-Pattern

@@ -2,314 +2,313 @@
 //--- 010 Editor Binary Template
 //
 //      File: mohf_bpd.bt
-//   Authors: Sten
-//   Version: 0.6.0
-//   Purpose: Medal of Honor Frontline - BPD Binary Polytope Data (Level Geometry)
+//   Authors: Sten + Claude
+//   Version: 0.7.0
+//   Purpose: Medal of Honor Frontline - BPD Level Geometry
 //  Category: Game
 // File Mask: *.bpd
 //  ID Bytes: 09 00 00 00
 //   History:
-//     0.6.0  2026-05-25  SmallVB IndexBuffer purpose resolved:
-//                        Indices at 0x773AC (1018 entries) are MainVB triangle strip indices
-//                        for detail sub-meshes. max_idx=247 < 1364 (MainVB count).
-//                        SubMesh entry reinterpreted: (strip_idx_count, centroid_count, centroid_ptr).
-//                        strip_idx_count = number of MainVB strip indices for this detail mesh.
-//                        centroid_count = number of float3 centroid points in SmallVB.
-//                        centroid_ptr = abs offset into SmallVB section (per-SubMesh centroid data).
-//     0.5.0  2026-05-25  Diffuse texture mapping SOLVED:
-//                        SubMesh table (20×12B): (global_tex_idx u32, vtx_count u32, SmallVB_ptr u32).
-//                        SmallVB = polygon centroid positions (float3). Per-vertex diffuse texture
-//                        determined by nearest-centroid lookup: nearest SmallVB point → tex_idx.
-//                        global_tex_idx maps into a sequence of CPT files (c0..c6) for level 1-1:
-//                          c0: indices 0-53 (54 textures)   c1: 54-69   c2: 70-109
-//                          c3: 110-130 (21)   c4: 131-144 (14)   c5: 145-185 (41)   c6: 186-225 (40)
-//                        Total 226 diffuse textures across 7 CPT files for level 1-1.
-//                        Index buffer layout: 0x773AC = SmallVB indices (1018), 0x77BA0 = MainVB strip (5170).
-//                        MainVB strip: no 0xFFFF restarts, degenerate pairs flip winding.
-//                        Verified OBJ export: 1364 verts, 5040 tris, 15 diffuse material groups.
-//     0.4.0  2026-05-24  All blocks fully decoded:
-//                        Block5/B5 (543 entries): particle instance data (DmitriParticle positions/params)
-//                        Block6/B6 (244 defs, variable size): particle effect definitions (hash+blend+color)
-//                        Block7/B7 (5x124B): particle emitter type definitions
-//                        Block9 (15x8B): emitter instance table (NamePtr->gap string pool, DataPtr->B5)
-//                        BlockA (244x8B): effect texture name lookup (NamePtr->B9 string pool, DataPtr->B6)
-//                        Gap B8->B9 (252B): string pool for emitter names (DmitriParticle01..16, Explosion05)
-//                        B9-area (in B5): string pool for 244 effect texture names
-//                        Confirmed: NO diffuse UVs in BPD vertex data.
-//                        All 1364 MainVB verts use lm_tex_index=7 (SHPX[7] 32x32 lightmap atlas).
-//                        lm_u range 0..254 (=0..1 normalized), lm_v range 115..163 (narrow band).
-//                        PSP file (companion): Physics BSP collision, no render material info.
-//                        CDB file (companion): Collision BSP (physics), no render material info.
-//                        Diffuse texturing: world-space planar projection, params NOT in BPD.
-//     0.3.1  2026-05-23  Gap buffer decoded: 204 x float4 BSP split-planes (Nx,Ny,Nz,D).
-//                        MainVB triangle strip confirmed (degenerate pair restarts, no 0xFFFF sentinel).
-//     0.3.0  2026-05-22  Particle system blocks identified (B5/B6/B7/B9/BlockA).
-//     0.2.0  2026-05-22  MainVB Vertex24 fully decoded; SubMesh + SmallVB; Block8 AABB nodes.
-//     0.1.0  2026-05-22  Initial: header + SHPX table + basic block layout.
+//     0.7.0  2026-05-27  Full rewrite: clean structure, correct field names,
+//                        vertex runtime-pointer bytes documented, CDB companion noted.
+//     0.6.0  2026-05-25  SmallVB index buffer purpose confirmed.
+//     0.5.0  2026-05-25  Diffuse texture mapping solved via SubMesh centroid lookup.
+//     0.4.0  2026-05-24  All particle blocks decoded.
+//     0.3.1  2026-05-23  BSP plane pool decoded.
+//     0.2.0  2026-05-22  MainVB Vertex24 decoded; SubMesh + SmallVB.
+//     0.1.0  2026-05-22  Initial.
 //
-// ── FILE LAYOUT ───────────────────────────────────────────────────────────────
+// ── OVERVIEW ─────────────────────────────────────────────────────────────────
 //
-//  [0x00..0x57]   Header (88 bytes, 11 x offset/count pairs)
-//  [SHPX_table]   78 x uint32 absolute offsets to embedded SHPX texture blocks
-//  [SmallVB]      79 x float3  (detail mesh vertices, no UV)
-//  [SubMesh]      20 x 12B     (texture assignment: global_tex_idx, centroid_count, SmallVB_ptr)
-//  [IndexBuffer]  6188 x uint16 (1018 for SubMeshes + 5170 for MainVB triangle strip)
-//  [MainVB]       1364 x 24B   (see VERTEX24 below)
-//  [BSP_Planes]   204 x 16B    (float4 Nx,Ny,Nz,D - BSP split plane pool)
-//  [Block8]       17 x 48B     (AABB BSP nodes, see B8_NODE)
-//  [Gap B8->B9]   252 bytes    (string pool: "DmitriParticle01".."Explosion05")
-//  [Block9]       15 x 8B      (emitter instance: NamePtr, DataPtr->B5)
-//  [BlockA]       244 x 8B     (effect texture lookup: NamePtr, DataPtr->B6)
-//  [Block6]       variable     (244 particle effect definitions)
-//  [Block7]       5 x 124B     (particle emitter type definitions)
-//  [Block5]       variable     (543 particle instance data records)
+//  BPD = Binary Polytope Data.
+//  Contains RENDER geometry for floor and ceiling surfaces only.
+//  Walls are in the companion CDB file (Collision Data Block).
 //
-// ── VERTEX24 FORMAT ───────────────────────────────────────────────────────────
+//  Companion files (same base name, different extension):
+//    _P.bpd  → this file (render geometry)
+//    _P.psp  → physics/pathfinding data
+//    _C.cdb  → collision geometry WITH walls (world-space float3 verts, 3D)
 //
-//  stride = 24 bytes:
-//  [+00..+0B]  float3 XYZ        world-space position (meters)
-//  [+0C..+13]  int16[4] Normal   SNorm16: nx,ny,nz,nw (nw unused, magnitude~1.0)
-//  [+14..+14]  uint8 lm_u        lightmap U coordinate (0=0.0 .. 255=1.0)
-//  [+15..+15]  uint8 lm_v        lightmap V coordinate (0=0.0 .. 255=1.0)
-//  [+16..+17]  uint16 lm_tex_idx index into SHPX table (all 1364 verts = 7 for level 1_1)
+//  Coordinate system: X=right, Y=forward, Z=up (MOHF world space)
 //
-//  NOTE: NO diffuse UV coordinates stored in vertex. Diffuse texture assigned per-polygon:
-//        Use SubMesh table (nearest centroid) to get global_tex_idx → CPT file + local index.
-//  NOTE: lm_u covers full range 0..254; lm_v covers only 115..163 (narrow atlas band).
+// ── FILE LAYOUT ──────────────────────────────────────────────────────────────
 //
-// ── DIFFUSE TEXTURE LOOKUP ───────────────────────────────────────────────────
+//  [0x00..0x57]  Header          88B  (11 × offset/count pairs)
+//  [SHPX blocks] embedded        78 lightmap texture blocks (SHPX format)
+//  [ShpxPtrTbl]  78 × 4B        abs file offsets to each embedded SHPX block
+//  [Centroids]   79 × 12B       float3 centroid positions (one per SubMesh polygon group)
+//  [SubMeshTbl]  20 × 12B       diffuse texture assignment per polygon group
+//  [IdxBuf]      6188 × 2B      triangle indices: 1018 (SubMesh strips) + 5170 (MainVB strip)
+//  [MainVB]      1364 × 24B     render vertices (pos + lightmap UV + runtime bytes)
+//  [BspPlanes]   204 × 16B      float4 BSP split planes (Nx,Ny,Nz,D)
+//  [BspNodes]    17 × 48B       AABB BSP leaf nodes
+//  [NamePool]    252B            null-terminated particle emitter name strings
+//  [EmitterTbl]  15 × 8B        particle emitter instances (name ptr + data ptr)
+//  [EffectTbl]   244 × 8B       particle effect texture lookup
+//  [EffectDefs]  variable        244 particle effect definitions
+//  [EmitTypes]   5 × 124B       particle emitter type definitions
+//  [Particles]   variable        543 particle instance records (variable-size each)
 //
-//  SubMesh Table (20 entries × 12B each):
-//    [+00] global_tex_idx  uint32  = global index across all level CPT files (0..225 for lvl 1-1)
-//    [+04] centroid_count  uint32  = number of polygon centroids for this material
-//    [+08] SmallVB_ptr     uint32  = abs offset to centroid float3 array in SmallVB section
+// ── VERTEX FORMAT (24B stride) ───────────────────────────────────────────────
 //
-//  Per-vertex diffuse texture assignment (CPU side):
-//    1. Read vertex world-space XYZ
-//    2. For each SubMesh entry: find nearest centroid (min Euclidean distance)
-//    3. Winning entry's global_tex_idx → CPT file + local texture index
+//  [+00..+0B]  float3    XYZ           world-space position (meters)
+//  [+0C..+13]  uint32[3] RuntimePtrs   patched by engine at load time, ignore in file
+//                                       (values are 0 in file; engine writes vtx buffer ptrs)
+//  [+14..+14]  uint8     LM_U          lightmap atlas U (0..255 = 0.0..1.0)
+//  [+15..+15]  uint8     LM_V          lightmap atlas V (0..255 = 0.0..1.0)
+//  [+16..+17]  uint16    LM_TexIndex   index into ShpxPtrTbl (all 1364 verts = 7 for 1_1_P)
 //
-//  CPT file index ranges (level 1-1, 7 CPT files, 226 total textures):
-//    c0: 0-53 (54)   c1: 54-69 (16)   c2: 70-109 (40)   c3: 110-130 (21)
-//    c4: 131-144 (14)   c5: 145-185 (41)   c6: 186-225 (40)
+//  NOTE: No diffuse UV in vertex. Diffuse assigned per-polygon via SubMesh centroid lookup.
+//  NOTE: lm_u 0..254, lm_v 115..163 (narrow band within single 32×32 lightmap atlas).
 //
-//  Index buffer layout:
-//    0x773AC: SmallVB index buffer (1018 × uint16, triangle list for detail meshes)
-//    0x77BA0: MainVB index buffer  (5170 × uint16, triangle strip, no 0xFFFF sentinel)
-//    Triangle strip winding: degenerate pairs (a==b or b==c) flip winding; skip these.
+// ── DIFFUSE TEXTURE ASSIGNMENT ───────────────────────────────────────────────
 //
-// ── BLOCK8 NODE FORMAT ────────────────────────────────────────────────────────
+//  SubMesh table has 20 entries. Each entry covers a group of polygons sharing a texture.
+//  To find a polygon's diffuse texture:
+//    1. Compute polygon centroid (average of 3 vertex positions)
+//    2. Find nearest Centroid entry → that SubMesh's TexIdx is the diffuse texture
 //
-//  stride = 48 bytes:
-//  [+00..+0B]  float3 BBoxMin
-//  [+0C..+17]  float3 BBoxMax
-//  [+18..+1F]  uint32 Child1Count, uint32 Child1Offset -> 6 x float4 planes in BSP_Planes pool
-//  [+20..+27]  uint32 Child2Count, uint32 Child2Offset -> 2 x uint32 vertex range
-//  [+28..+2F]  uint32 Child3Count, uint32 Child3Offset (usually 0)
+//  TexIdx is a global index across all level CPT files:
+//    c0: 0-53   c1: 54-69   c2: 70-109   c3: 110-130
+//    c4: 131-144   c5: 145-185   c6: 186-225
+//
+// ── INDEX BUFFER ─────────────────────────────────────────────────────────────
+//
+//  Single contiguous buffer from SubMeshTbl-end to MainVB-start.
+//  First 1018 entries: triangle strip indices for SubMesh detail geometry.
+//  Remaining 5170 entries: MainVB triangle strip (no 0xFFFF sentinels).
+//  Strip winding: degenerate pairs (idx[i]==idx[i+1] or idx[i+1]==idx[i+2]) flip winding.
+//
+// ── BSP NODES ────────────────────────────────────────────────────────────────
+//
+//  Each node has a bounding box and up to 3 child references.
+//  Child1: 6 planes from BspPlanes (AABB = 6 half-space planes)
+//  Child2: vertex range (2 × uint32)
+//  Child3: usually empty
 //
 //------------------------------------------------
 
 LittleEndian();
 OutputPaneClear();
 
-// ── Header ────────────────────────────────────────────────────────────────────
+// ── Header ───────────────────────────────────────────────────────────────────
 
-struct BPD_HEADER {
-    uint32 Sign             <format=hex, comment="= 0x09">;
-    uint32 FileSize;
-    uint32 ShpxTableOffset  <format=hex>;
-    uint32 ShpxTableCount   ;  // = 0 (packed with offset)
-    uint32 SubMeshOffset    <format=hex>;
-    uint32 SubMeshCount;
-    uint32 MainVBOffset     <format=hex>;
-    uint32 MainVBCount      ;  // vertices
-    uint32 ShpxOffTableOff  <format=hex, comment="Abs offset to SHPX abs-offset table">;
-    uint32 ShpxOffTableCnt  ;  // = 78 embedded SHPX blocks
-    uint32 Block5Offset     <format=hex, comment="Particle instance data">;
-    uint32 Block5Count      ;  // = 543
-    uint32 Block6Offset     <format=hex, comment="Particle effect definitions">;
-    uint32 Block6Count      ;  // = 244
-    uint32 Block7Offset     <format=hex, comment="Particle emitter type defs">;
-    uint32 Block7Count      ;  // = 5
-    uint32 Block8Offset     <format=hex, comment="AABB BSP nodes">;
-    uint32 Block8Count      ;  // = 17
-    uint32 Block9Offset     <format=hex, comment="Emitter instance table">;
-    uint32 Block9Count      ;  // = 15
-    uint32 BlockAOffset     <format=hex, comment="Effect texture name lookup">;
-    uint32 BlockACount      ;  // = 244
-} Header;
-
-// ── SHPX Offset Table ─────────────────────────────────────────────────────────
-
-FSeek(Header.ShpxOffTableOff);
 typedef struct {
-    uint32 ShpxAbsOffset <format=hex, comment="Absolute file offset to embedded SHPX block">;
-} SHPX_REF <read=ReadShpxRef>;
-string ReadShpxRef(SHPX_REF& r) {
-    string s; SPrintf(s, "0x%06X", r.ShpxAbsOffset); return s;
+    uint32  Signature       <format=hex, comment="= 0x09">;
+    uint32  FileSize;
+    uint32  SubMeshOff      <format=hex>;
+    uint32  SubMeshCount;                   // = 20
+    uint32  MainVBOff       <format=hex>;
+    uint32  MainVBCount;                    // vertex count (= 1364 for 1_1_P)
+    uint32  ShpxPtrTblOff   <format=hex>;
+    uint32  ShpxCount;                      // = 78 embedded lightmap SHPX blocks
+    uint32  ParticleInstOff <format=hex, comment="Block5: particle instance records">;
+    uint32  ParticleInstCnt;                // = 543
+    uint32  EffectDefOff    <format=hex, comment="Block6: particle effect definitions">;
+    uint32  EffectDefCnt;                   // = 244
+    uint32  EmitTypeOff     <format=hex, comment="Block7: emitter type definitions">;
+    uint32  EmitTypeCnt;                    // = 5
+    uint32  BspNodeOff      <format=hex, comment="Block8: AABB BSP leaf nodes">;
+    uint32  BspNodeCnt;                     // = 17
+    uint32  EmitterInstOff  <format=hex, comment="Block9: emitter instance table">;
+    uint32  EmitterInstCnt;                 // = 15
+    uint32  EffectLookupOff <format=hex, comment="BlockA: effect texture lookup">;
+    uint32  EffectLookupCnt;                // = 244
+    uint32  Unk_B_Off       <format=hex>;
+    uint32  Unk_B_Cnt;                      // = 244 (same count as EffectLookup)
+} BPD_HEADER;
+
+BPD_HEADER Header;
+
+// ── SHPX Pointer Table ───────────────────────────────────────────────────────
+
+FSeek(Header.ShpxPtrTblOff);
+
+typedef struct {
+    uint32  AbsOffset <format=hex, comment="file offset to embedded SHPX block">;
+} SHPX_PTR <read=ReadShpxPtr>;
+
+string ReadShpxPtr(SHPX_PTR& p) {
+    string s; SPrintf(s, "0x%X", p.AbsOffset); return s;
 }
-SHPX_REF ShpxTable[Header.ShpxOffTableCnt] ;  // 78 embedded SHPX texture offsets
 
-// ── SmallVB (detail mesh vertices, no UV) ─────────────────────────────────────
+SHPX_PTR ShpxPtrTbl[Header.ShpxCount];  // 78 lightmap texture offsets
 
-local quad smallvb_start = startof(ShpxTable) + sizeof(ShpxTable);
-local quad smallvb_count = (Header.SubMeshOffset - smallvb_start) / 12;
-FSeek(smallvb_start);
+// ── Centroid Array ───────────────────────────────────────────────────────────
+
 typedef struct { float X, Y, Z; } VEC3 <read=ReadVec3>;
 string ReadVec3(VEC3& v) {
-    string s; SPrintf(s, "(%.2f,%.2f,%.2f)", v.X, v.Y, v.Z); return s;
+    string s; SPrintf(s, "(%.1f, %.1f, %.1f)", v.X, v.Y, v.Z); return s;
 }
-VEC3 SmallVB[smallvb_count] ;  // 79 detail-mesh vertices (float3, no UV/normal)
 
-// ── SubMesh Table ─────────────────────────────────────────────────────────────
+local quad centroid_start = FTell();
+local quad centroid_count = (Header.SubMeshOff - centroid_start) / 12;
+VEC3 Centroids[centroid_count];  // 79 polygon-group centroid positions
 
-FSeek(Header.SubMeshOffset);
-typedef struct {
-    uint32 IndexCount  ;  // number of triangle-list indices for this sub-mesh
-    uint32 VertexCount ;  // number of vertices in SmallVB used
-    uint32 VBOffset    <format=hex, comment="absolute offset into SmallVB">;
-} SUBMESH_ENTRY <read=ReadSubMesh>;
-string ReadSubMesh(SUBMESH_ENTRY& e) {
-    string s; SPrintf(s, "idx=%d vtx=%d", e.IndexCount, e.VertexCount); return s;
-}
-SUBMESH_ENTRY SubMeshTable[Header.SubMeshCount];
+// ── SubMesh Table ────────────────────────────────────────────────────────────
 
-// ── Index Buffer ──────────────────────────────────────────────────────────────
-
-local quad ib_count = (Header.MainVBOffset - FTell()) / 2;
-uint16 IndexBuffer[ib_count]
-;  // 6188 indices: first 1018 for SubMeshes (triangle-list), remaining 5170 for MainVB (triangle-strip with degenerate-pair restarts)
-
-// ── Main Vertex Buffer ────────────────────────────────────────────────────────
-
-FSeek(Header.MainVBOffset);
+FSeek(Header.SubMeshOff);
 
 typedef struct {
-    float  X, Y, Z;                ;  // world-space position
-    int16  NX, NY, NZ, NW;         ;  // SNorm16 normal (NW unused)
-    ubyte  LM_U                    ;  // lightmap U: 0..255 = 0.0..1.0
-    ubyte  LM_V                    ;  // lightmap V: 0..255 = 0.0..1.0
-    uint16 LM_TexIndex             ;  // index into ShpxTable (all verts=7 for 1_1_P)
-} VERTEX24 <read=ReadVertex24, size=24>;
+    uint32  TexIdx;         // global diffuse texture index (across all level CPT files)
+    uint32  CentroidCount;  // number of centroid points for this group
+    uint32  CentroidPtr <format=hex, comment="abs offset into Centroids array">;
+} SUBMESH <read=ReadSubMesh>;
 
-string ReadVertex24(VERTEX24& v) {
+string ReadSubMesh(SUBMESH& s) {
+    string r; SPrintf(r, "tex=%d  centroids=%d", s.TexIdx, s.CentroidCount); return r;
+}
+
+SUBMESH SubMeshTbl[Header.SubMeshCount];  // 20 diffuse material groups
+
+// ── Index Buffer ─────────────────────────────────────────────────────────────
+
+local quad ib_start = FTell();
+local quad ib_count = (Header.MainVBOff - ib_start) / 2;
+
+uint16 IdxBuf[ib_count];
+// First 1018: SubMesh detail strip indices (max index < 248)
+// Remaining 5170: MainVB triangle strip (degenerate-pair restarts, no 0xFFFF)
+
+// ── Main Vertex Buffer ───────────────────────────────────────────────────────
+
+FSeek(Header.MainVBOff);
+
+typedef struct {
+    float   X, Y, Z;           // world-space position
+    uint32  RuntimePtr0;        // = 0 in file; engine patches at load
+    uint32  RuntimePtr1;        // = 0 in file; engine patches at load
+    uint32  RuntimePtr2;        // = 0 in file; engine patches at load
+    ubyte   LM_U;               // lightmap U coordinate (0=0.0 .. 255=1.0)
+    ubyte   LM_V;               // lightmap V coordinate (0=0.0 .. 255=1.0)
+    uint16  LM_TexIndex;        // index into ShpxPtrTbl (= 7 for all verts in 1_1_P)
+} VERTEX <read=ReadVertex, size=24>;
+
+string ReadVertex(VERTEX& v) {
     string s;
-    SPrintf(s, "(%.1f,%.1f,%.1f) lm[%d]=(%d,%d)", v.X,v.Y,v.Z, v.LM_TexIndex, v.LM_U, v.LM_V);
+    SPrintf(s, "(%.1f, %.1f, %.1f)  lm[%d]=(%d,%d)",
+            v.X, v.Y, v.Z, v.LM_TexIndex, v.LM_U, v.LM_V);
     return s;
 }
-VERTEX24 MainVB[Header.MainVBCount];
 
-// ── BSP Plane Pool (Gap between MainVB and Block8) ───────────────────────────
+VERTEX MainVB[Header.MainVBCount];
 
-local quad gap_start   = FTell();
-local quad gap_count   = (Header.Block8Offset - gap_start) / 16;
+// ── BSP Plane Pool ───────────────────────────────────────────────────────────
+
+local quad bspplane_start = FTell();
+local quad bspplane_count = (Header.BspNodeOff - bspplane_start) / 16;
 
 typedef struct {
-    float NX ;  // plane normal X
-    float NY ;  // plane normal Y
-    float NZ ;  // plane normal Z
-    float D  ;  // plane distance: point.dot(N) == D
+    float Nx, Ny, Nz;   // plane normal (unit vector)
+    float D;             // plane distance: dot(pos, N) == D
 } BSP_PLANE <read=ReadPlane>;
 
 string ReadPlane(BSP_PLANE& p) {
     string s;
-    SPrintf(s, "n=(%.3f,%.3f,%.3f) d=%.3f", p.NX,p.NY,p.NZ,p.D);
+    SPrintf(s, "n=(%.3f,%.3f,%.3f) d=%.3f", p.Nx, p.Ny, p.Nz, p.D);
     return s;
 }
-BSP_PLANE PlanePool[gap_count]
-    ;  // 204 BSP split-planes referenced by Block8 AABB nodes
 
-// ── Block8: AABB BSP Nodes ────────────────────────────────────────────────────
+BSP_PLANE BspPlanes[bspplane_count];  // 204 BSP split planes
 
-FSeek(Header.Block8Offset);
+// ── BSP Nodes ────────────────────────────────────────────────────────────────
+
+FSeek(Header.BspNodeOff);
 
 typedef struct {
     float   BBoxMinX, BBoxMinY, BBoxMinZ;
     float   BBoxMaxX, BBoxMaxY, BBoxMaxZ;
-    uint32  Child1Count ;  // = 6: number of planes in PlanePool
-    uint32  Child1Offset <format=hex, comment="abs offset into PlanePool (6 x BSP_PLANE = AABB faces)">;
-    uint32  Child2Count ;  // = 2: vertex range
-    uint32  Child2Offset <format=hex, comment="abs offset to uint32[2] vertex range">;
-    uint32  Child3Count;
-    uint32  Child3Offset <format=hex>;
-} B8_NODE <read=ReadB8Node, size=48>;
+    uint32  PlaneCount;                     // = 6 (one AABB = 6 half-space planes)
+    uint32  PlaneOff    <format=hex, comment="abs offset into BspPlanes (6 × BSP_PLANE)">;
+    uint32  VtxRngCount;                    // = 2 (vertex range: first, count)
+    uint32  VtxRngOff   <format=hex, comment="abs offset to uint32[2] vertex range">;
+    uint32  Unk3Count;
+    uint32  Unk3Off     <format=hex>;
+} BSP_NODE <read=ReadBspNode, size=48>;
 
-string ReadB8Node(B8_NODE& n) {
+string ReadBspNode(BSP_NODE& n) {
     string s;
-    SPrintf(s, "bbox=(%.0f..%.0f, %.0f..%.0f)", n.BBoxMinX,n.BBoxMaxX,n.BBoxMinY,n.BBoxMaxY);
+    SPrintf(s, "bbox=(%.0f..%.0f, %.0f..%.0f, %.0f..%.0f)",
+            n.BBoxMinX, n.BBoxMaxX, n.BBoxMinY, n.BBoxMaxY, n.BBoxMinZ, n.BBoxMaxZ);
     return s;
 }
-B8_NODE AabbNodes[Header.Block8Count];
 
-// ── Gap B8->B9: Emitter Name String Pool ────────────────────────────────────
+BSP_NODE BspNodes[Header.BspNodeCnt];
 
-local quad gap2_start = FTell();
-local quad gap2_size  = Header.Block9Offset - gap2_start;
-byte EmitterNamePool[gap2_size]
-;  // 252-byte string pool: null-terminated emitter names (DmitriParticle01..16, Explosion05)
+// ── Emitter Name Pool ────────────────────────────────────────────────────────
 
-// ── Block9: Emitter Instance Table ───────────────────────────────────────────
+local quad namepool_start = FTell();
+local quad namepool_size  = Header.EmitterInstOff - namepool_start;
+byte NamePool[namepool_size];
+// Null-terminated strings: "DmitriParticle01".."DmitriParticle16", "Explosion05" etc.
 
-FSeek(Header.Block9Offset);
+// ── Emitter Instance Table ───────────────────────────────────────────────────
+
+FSeek(Header.EmitterInstOff);
+
 typedef struct {
-    uint32 NamePtr  <format=hex, comment="abs offset into EmitterNamePool">;
-    uint32 DataPtr  <format=hex, comment="abs offset into Block5 (particle instance data)">;
-} EMITTER_INSTANCE <read=ReadEmitter>;
-string ReadEmitter(EMITTER_INSTANCE& e) {
-    string s; SPrintf(s, "name@0x%X data@0x%X", e.NamePtr, e.DataPtr); return s;
+    uint32  NamePtr <format=hex, comment="abs offset into NamePool">;
+    uint32  DataPtr <format=hex, comment="abs offset into ParticleInst data">;
+} EMITTER_INST <read=ReadEmitterInst>;
+
+string ReadEmitterInst(EMITTER_INST& e) {
+    string s; SPrintf(s, "name@0x%X  data@0x%X", e.NamePtr, e.DataPtr); return s;
 }
-EMITTER_INSTANCE EmitterInstances[Header.Block9Count]
-    ;  // 15 emitter instances: named particle emitters placed in level
 
-// ── BlockA: Effect Texture Lookup ─────────────────────────────────────────────
+EMITTER_INST EmitterInstTbl[Header.EmitterInstCnt];  // 15 named emitter instances
 
-FSeek(Header.BlockAOffset);
+// ── Effect Texture Lookup ────────────────────────────────────────────────────
+
+FSeek(Header.EffectLookupOff);
+
 typedef struct {
-    uint32 NamePtr  <format=hex, comment="abs offset into B5-area string pool (effect texture name)">;
-    uint32 DataPtr  <format=hex, comment="abs offset into Block6 (effect definition)">;
-} EFFECT_LOOKUP <read=ReadEffect>;
-string ReadEffect(EFFECT_LOOKUP& e) {
-    string s; SPrintf(s, "name@0x%X def@0x%X", e.NamePtr, e.DataPtr); return s;
+    uint32  NamePtr <format=hex, comment="abs offset to effect texture name string">;
+    uint32  DefPtr  <format=hex, comment="abs offset into EffectDefs">;
+} EFFECT_LOOKUP <read=ReadEffectLookup>;
+
+string ReadEffectLookup(EFFECT_LOOKUP& e) {
+    string s; SPrintf(s, "name@0x%X  def@0x%X", e.NamePtr, e.DefPtr); return s;
 }
-EFFECT_LOOKUP EffectTable[Header.BlockACount]
-    ;  // 244 particle effect texture name -> definition mappings
 
-// ── Block6: Particle Effect Definitions (variable size, blob) ─────────────────
+EFFECT_LOOKUP EffectLookupTbl[Header.EffectLookupCnt];  // 244 effect name→def mappings
 
-FSeek(Header.Block6Offset);
-local quad b6_size = Header.Block7Offset - Header.Block6Offset;
-byte Block6Data[b6_size]
-;  // Particle effect definitions (variable-size records). Each record: CRC/Hash(4) + blend_mode(4) + color_params(4) + float params. Referenced by BlockA.DataPtr.
+// ── Effect Definitions (variable-size blob) ──────────────────────────────────
 
-// ── Block7: Particle Emitter Type Definitions ────────────────────────────────
+FSeek(Header.EffectDefOff);
+local quad effectdef_size = Header.EmitTypeOff - Header.EffectDefOff;
+byte EffectDefs[effectdef_size];
+// 244 variable-size records. Each: hash(4B) + blend_mode(4B) + color + float params.
 
-FSeek(Header.Block7Offset);
-typedef struct { byte Data[124]; } B7_EMITTER_DEF;
-B7_EMITTER_DEF EmitterTypeDefs[Header.Block7Count]
-    ;  // 5 emitter type definitions (stride=124 bytes each)
+// ── Emitter Type Definitions ─────────────────────────────────────────────────
 
-// ── Block5: Particle Instance Data (variable size, blob) ─────────────────────
+FSeek(Header.EmitTypeOff);
+typedef struct { byte Data[124]; } EMITTER_TYPE;
+EMITTER_TYPE EmitterTypes[Header.EmitTypeCnt];  // 5 emitter type defs × 124B
 
-FSeek(Header.Block5Offset);
-local quad b5_size = Header.FileSize - Header.Block5Offset;
-byte Block5Data[b5_size]
-;  // 543 particle instance records (variable size). Contains: world positions, velocities, timing for each particle emitter instance. Also contains 244-entry string pool for effect texture names (referenced by BlockA.NamePtr).
+// ── Particle Instance Data (variable-size blob) ──────────────────────────────
 
-// ── Summary ───────────────────────────────────────────────────────────────────
+FSeek(Header.ParticleInstOff);
+local quad particleinst_size = Header.FileSize - Header.ParticleInstOff;
+byte ParticleInstData[particleinst_size];
+// 543 variable-size records. Contains world positions, velocities, timing.
+// Also contains the 244-name string pool referenced by EffectLookupTbl.NamePtr.
 
-Printf("=== BPD Summary ===\ ");
-Printf("File size:       %d bytes (%.1f KB)\ ", Header.FileSize, Header.FileSize/1024.0);
-Printf("\ Render geometry:\ ");
-Printf("  SmallVB:       %d vertices (detail meshes, no UV)\ ", smallvb_count);
-Printf("  SubMeshes:     %d\ ", Header.SubMeshCount);
-Printf("  IndexBuffer:   %d uint16\ ", ib_count);
-Printf("  MainVB:        %d vertices x 24B (with lightmap UV)\ ", Header.MainVBCount);
-Printf("  BSP planes:    %d float4\ ", gap_count);
-Printf("  AABB nodes:    %d\ ", Header.Block8Count);
-Printf("  SHPX textures: %d (all MainVB verts use index 7)\ ", Header.ShpxOffTableCnt);
-Printf("\ Particle system:\ ");
-Printf("  Emitter instances: %d (Block9)\ ", Header.Block9Count);
-Printf("  Effect lookups:    %d (BlockA)\ ", Header.BlockACount);
-Printf("  Emitter type defs: %d (Block7)\ ", Header.Block7Count);
-Printf("\ NOTE: No diffuse UV coords. World-space planar projection used.\ ");
-Printf("NOTE: Lightmap = SHPX[7] (32x32 PAL8), lm_u/v normalized uint8.\ ");
+// ── Summary ──────────────────────────────────────────────────────────────────
+
+Printf("=== BPD Summary ===\n");
+Printf("File:          %d bytes\n", Header.FileSize);
+Printf("\nRender geometry:\n");
+Printf("  Centroids:   %d float3\n", centroid_count);
+Printf("  SubMeshes:   %d  (diffuse material groups)\n", Header.SubMeshCount);
+Printf("  IdxBuf:      %d uint16  (1018 SubMesh + 5170 MainVB strip)\n", ib_count);
+Printf("  MainVB:      %d vertices × 24B\n", Header.MainVBCount);
+Printf("  BSP planes:  %d float4\n", bspplane_count);
+Printf("  BSP nodes:   %d\n", Header.BspNodeCnt);
+Printf("  Lightmaps:   %d SHPX blocks\n", Header.ShpxCount);
+Printf("\nParticle system:\n");
+Printf("  Emitter instances:  %d\n", Header.EmitterInstCnt);
+Printf("  Effect lookups:     %d\n", Header.EffectLookupCnt);
+Printf("  Emitter type defs:  %d × 124B\n", Header.EmitTypeCnt);
+Printf("  Particle instances: %d (variable-size records)\n", Header.ParticleInstCnt);
+Printf("\nNOTE: No diffuse UV in vertices. Use SubMesh centroid lookup.\n");
+Printf("NOTE: Walls not in BPD - see companion _C_c0.cdb for collision geometry.\n");
