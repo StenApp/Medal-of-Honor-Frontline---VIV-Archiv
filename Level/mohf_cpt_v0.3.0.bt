@@ -1,0 +1,234 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_cpt.bt
+//   Authors: Sten + Claude
+//   Version: 0.3.0
+//   Purpose: Medal of Honor Frontline - CPT Chunk Polygon/Texture
+//  Category: Game
+// File Mask: *.cpt
+//  ID Bytes: 12 00 00 00
+//   History:
+//     0.1.0  2026-05-28  Initial.
+//     0.2.0  2026-05-29  Descriptor chain confirmed (vtxp==pos+16).
+//     0.3.0  2026-05-30  Full vertex format confirmed (packed normal, diffuse,
+//                        UV), NV2A tristrip decoder fixed (AA-restart keeps
+//                        bridge vertex), Section-2 identified as Render BSP.
+//
+// ── FILE VARIANTS ─────────────────────────────────────────────────────────────
+//
+//   *_ART.cpt       Master CPT: no geometry, only SHPX textures + BSP data
+//   *_ART_cN.cpt    Chunk CPTs (c0..c6): render geometry + SHPX textures
+//
+// ── HEADER (0x00..0x57 = 88B) ────────────────────────────────────────────────
+//
+//   [+00] Version     uint32 = 0x12 = 18
+//   [+04] FileSize    uint32
+//   [+08] SectionCnt  uint32
+//   [+0C] BSP_NodesOff  uint32   Section-2: Render BSP nodes (146 × 128B)
+//   [+10] BSP_NodesCnt  uint32   = 146
+//   [+14] BSP_LeavesOff uint32   Render BSP leaves (26 × 128B)
+//   [+18] BSP_LeavesCnt uint32   = 26
+//   [+1C] BSP_LeafDataOff uint32 BSP leaf data (1338 entries)
+//   [+20] BSP_LeafDataCnt uint32 = 1338
+//   [+24] BSP_PlanesOff uint32   BSP planes (1256 × 16B = float4 per plane)
+//   [+28] BSP_PlanesCnt uint32   = 179 (pairs of planes → 1256 actual planes)
+//   [+2C] ObjMeshOff  uint32     Object-space mesh section (near EOF)
+//   [+30] ObjMeshCnt  uint32     = 71
+//   [+34] DescStart   uint32     = first desc offset (0x1c78 area)
+//   [+38] Unk38       uint32
+//   [+3C] Unk3C       uint32
+//   [+40..+4B]        uint32[3]  = 0
+//   [+4C] SM0_VtxOff  uint32     = 0x58, SM0 vertex buffer start
+//   [+50] SM0_IbOff   uint32     SM0 index buffer start
+//   [+54] Unk54       uint32
+//
+// ── GEOMETRY BLOCK (0x58 .. SHPX_off) ────────────────────────────────────────
+//
+//   Layout:
+//     SM0  (mandatory)   Single mesh with vtx/ib offsets from header
+//     SM1  (mandatory)   12B header directly after SM0-IB
+//     DESCRIPTORS        Inline descriptor chain
+//     SECTION-2          Render BSP data
+//
+//   ── SM0 ──────────────────────────────────────────────────────────────────
+//     VB at header[+0x4C], VC = (header[+0x50] - header[+0x4C]) / 28
+//     IB at header[+0x50], scan until index >= VC
+//
+//   ── SM1 (12B header at SM0-IB-end) ──────────────────────────────────────
+//     [+00] u16  declared_vc   (NOT the actual vertex count — field meaning TBD)
+//     [+02] u16  = 0
+//     [+04] u16  secondary_bytes  (size of VB2/secondary data block after VB1)
+//     [+06] u16  = 0
+//     [+08] u16  declared_ic   (NOT the actual IB count — field meaning TBD)
+//     [+0A] u16  u2
+//     VB1 follows immediately: actual vertex count found by scanning
+//     IB follows VB1 + secondary_bytes: longest run of valid indices
+//
+//   ── DESCRIPTOR CHAIN ─────────────────────────────────────────────────────
+//     Starts directly after SM1-IB-end (with padding to 16B boundary + 8B).
+//     Each descriptor = 16B:
+//       [+00] uint32 = 0         (always zero)
+//       [+04] uint32 vtx_ptr     == desc_pos + 16  (inline, data follows desc)
+//       [+08] uint32 ib_ptr      == vtx_ptr + vc * 28
+//       [+0A] uint16 vc          vertex count
+//       [+0C] uint16 ic          index count (uint16 tristrip indices)
+//     Padding after IB: ((ib_end + 15) & ~15) + 8
+//     Chain ends when unk != 0 or vtx_ptr != pos+16.
+//
+//   Detection: scan step=4, require vtx_ptr == pos+16 (inline data)
+//
+// ── VERTEX FORMAT (28B stride) ────────────────────────────────────────────────
+//
+//   [+00..+0B]  float3  XYZ      world-space position (meters)
+//   [+0C..+0F]  uint32  PackedNormal  Xbox NV2A 11.11.10 format:
+//                         bits 31..21  NX (signed 11-bit, /1023.0)
+//                         bits 20..10  NY (signed 11-bit, /1023.0)
+//                         bits  9.. 0  NZ (signed 10-bit, /511.0)
+//   [+10..+13]  uint32  DiffuseARGB   usually 0xFFDCDCDC (light grey, full alpha)
+//   [+14..+17]  float   UV_U          texture U coordinate (may tile, range ~-18..31)
+//   [+18..+1B]  float   UV_V          texture V coordinate (may tile, range ~-33..11)
+//
+//   Note: UVs use D3DTADDRESS_WRAP. 20% of UVs are outside [0,1] (tiling textures).
+//
+// ── INDEX BUFFER (NV2A TRISTRIP) ─────────────────────────────────────────────
+//
+//   uint16 indices, values 0..VC-1.
+//   RESTART rule (NV2A / Xbox GPU):
+//     When index[i] == index[i-1]  (AA duplicate):
+//       → flush current strip to triangles
+//       → index[i] becomes FIRST vertex of next strip (bridge vertex)
+//     NOT discarded — kept as strip[0] of new strip.
+//
+//   Standard tristrip winding: even triangle (a,b,c), odd triangle (a,c,b).
+//   Trailing zeros at IB end = padding, not real indices.
+//   NO 0xFFFF restart markers (those are a D3D9/OpenGL extension).
+//
+// ── SECTION-2: RENDER BSP (header offsets 0x0C..0x34) ───────────────────────
+//
+//   Sub-section at [+0C]: BSP Nodes (stride 128B)
+//     Integer fields: child indices, leaf/node flags, vertex counts
+//     First entry is often zeroed (unused root)
+//
+//   Sub-section at [+14]: BSP Leaves (stride 128B)
+//     Leaf data for the BSP tree
+//
+//   Sub-section at [+1C]: BSP Leaf data
+//
+//   Sub-section at [+24]: BSP Planes (stride 16B = two float4 planes per entry)
+//     [+00..+0B]  float4  plane0: (NX, NY, NZ, D)  -- normal + distance
+//     [+08..+0F]  float4  plane1: (NX, NY, NZ, D)
+//     Used for view-frustum culling of submeshes at runtime.
+//     Example: (0.818, -0.575, 0, 81.25) = diagonal wall plane
+//
+//   Sub-section at [+2C]: Object-space meshes (near EOF)
+//
+// ── SHPX TEXTURE BLOCK (SHPX_off .. EOF) ─────────────────────────────────────
+//
+//   N consecutive SHPX blocks. Each begins with magic 0x58504853 ('SHPX').
+//   Format: [+70] fmt uint8, [+74] width uint16, [+76] height uint16,
+//           [+80..] pixel data (Morton/Z-order / swizzled layout).
+//   fmt=123: paletted,  fmt=125: RGBA
+//
+//   In *_ART.cpt (master): SHPX only, no geometry block.
+//
+// ── CPT VS CDB COVERAGE ───────────────────────────────────────────────────────
+//
+//   CPT BBox: X -252..234  Y -179..170  Z -11.8..16.5
+//   CDB BBox: X -232..234  Y -179..169  Z -10.9..16.1
+//   97% of CDB vertices have a CPT vertex within 1m → excellent coverage.
+//   3 samples >5m: likely internal collision faces (ceilings, hidden walls).
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+typedef struct {
+    uint32 Version          <comment="= 0x12 = 18">;
+    uint32 FileSize;
+    uint32 SectionCnt;
+    uint32 BSP_NodesOff     <format=hex, comment="Render BSP nodes (146 x 128B)">;
+    uint32 BSP_NodesCnt     <comment="= 146">;
+    uint32 BSP_LeavesOff    <format=hex, comment="Render BSP leaves (26 x 128B)">;
+    uint32 BSP_LeavesCnt    <comment="= 26">;
+    uint32 BSP_LeafDataOff  <format=hex>;
+    uint32 BSP_LeafDataCnt  <comment="= 1338">;
+    uint32 BSP_PlanesOff    <format=hex, comment="BSP planes, stride 16B (two float4 each)">;
+    uint32 BSP_PlanesCnt    <comment="179 entries x 2 planes = 1256 planes">;
+    uint32 ObjMeshOff       <format=hex, comment="Object-space mesh section near EOF">;
+    uint32 ObjMeshCnt       <comment="= 71">;
+    uint32 DescStart        <format=hex, comment="First descriptor offset hint">;
+    uint32 Unk38;
+    uint32 Unk3C;
+    uint32 Reserved[3];
+    uint32 SM0_VtxOff       <format=hex, comment="= 0x58, SM0 vertex buffer">;
+    uint32 SM0_IbOff        <format=hex, comment="SM0 index buffer start">;
+    uint32 Unk54;
+} CPT_HEADER;
+
+typedef struct {
+    float  X;
+    float  Y;
+    float  Z;
+    uint32 PackedNormal  <format=hex,
+        comment="NV2A 11.11.10: bits31-21=NX/1023, bits20-10=NY/1023, bits9-0=NZ/511">;
+    uint32 DiffuseARGB   <format=hex, comment="usually 0xFFDCDCDC = light grey">;
+    float  UV_U          <comment="may be outside [0,1] for tiling textures">;
+    float  UV_V;
+} CPT_VERTEX <size=28>;
+
+typedef struct {
+    uint32 Zero         <comment="always 0">;
+    uint32 VtxPtr       <format=hex, comment="== desc_pos + 16 (inline data)">;
+    uint32 IbPtr        <format=hex, comment="== VtxPtr + VC * 28">;
+    uint16 VC           <comment="vertex count">;
+    uint16 IC           <comment="index count (uint16 NV2A tristrip)">;
+} CPT_DESCRIPTOR <size=16>;
+
+typedef struct {
+    uint16 DeclaredVC   <comment="NOT actual vc — meaning TBD (possibly byte offset)">;
+    uint16 Zero0;
+    uint16 SecondaryBytes <comment="size of VB2/secondary block after VB1">;
+    uint16 Zero1;
+    uint16 DeclaredIC   <comment="NOT actual ic — meaning TBD">;
+    uint16 U2;
+} SM1_HEADER <size=12>;
+
+CPT_HEADER Hdr;
+
+local quad shpx_off = 0;
+local quad scan;
+for (scan = 0x58; scan < FileSize() - 4; scan++) {
+    if (ReadUInt(scan) == 0x58504853) { shpx_off = scan; break; }
+}
+
+FSeek(0x58);
+if (shpx_off > 0x58)
+    byte GeometryBlock[shpx_off - 0x58]
+        <comment="SM0 + SM1 + Descriptor chain + Section-2 BSP. See format notes.">;
+
+if (shpx_off > 0) {
+    FSeek(shpx_off);
+    byte ShpxTextureBlock[FileSize() - shpx_off]
+        <comment="Embedded SHPX diffuse/lightmap textures.">;
+}
+
+Printf("=== MOHF CPT v0.3.0 ===\n");
+Printf("FileSize:    %d B\n", Hdr.FileSize);
+Printf("GeomBlock:   0x58 .. 0x%X  (%d B)\n", shpx_off, shpx_off - 0x58);
+Printf("ShpxBlock:   0x%X .. EOF\n", shpx_off);
+Printf("\nVertex format (stride 28B):\n");
+Printf("  [+00..+0B] float3  XYZ          world-space (m)\n");
+Printf("  [+0C..+0F] uint32  PackedNormal  NV2A 11.11.10\n");
+Printf("  [+10..+13] uint32  DiffuseARGB   0xFFDCDCDC\n");
+Printf("  [+14..+17] float   UV_U          (tiles, not clamped to [0,1])\n");
+Printf("  [+18..+1B] float   UV_V\n");
+Printf("\nDescriptor chain (vtxp == pos+16):\n");
+Printf("  [+00] u32 = 0\n");
+Printf("  [+04] u32 vtx_ptr  (inline, data immediately after desc)\n");
+Printf("  [+08] u32 ib_ptr   (vtx_ptr + vc*28)\n");
+Printf("  [+0C] u16 vc\n");
+Printf("  [+0E] u16 ic\n");
+Printf("  Padding: ((ib_end+15)&~15)+8\n");
+Printf("\nNV2A Tristrip: AA-duplicate = restart, bridge vertex kept as new strip[0]\n");

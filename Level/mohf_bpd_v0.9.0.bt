@@ -1,0 +1,177 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_bpd.bt
+//   Authors: Sten + Claude
+//   Version: 0.9.0
+//   Purpose: Medal of Honor Frontline - BPD (Baked Path Data)
+//  Category: Game
+// File Mask: *.bpd
+//  ID Bytes: [variable - no fixed magic]
+//   History:
+//     0.8.0  2026-05-28  Initial.
+//     0.9.0  2026-05-30  BPD confirmed as AI Pathfinding data (NOT terrain mesh).
+//                        IB correctly identified at 0x773ac. Real vertex format
+//                        confirmed: 24B stride. PSP companion file = PBSP
+//                        precomputed path BSP tree.
+//
+// ── PURPOSE ───────────────────────────────────────────────────────────────────
+//
+//   BPD = Baked Path Data
+//   Contains AI pathfinding data for the level:
+//     - Waypoint mesh (vertices + tristrip IB) for AI navigation
+//     - AI waypoint graph (nodes + edges)
+//     - Lightmap offset table
+//     - SubMesh/centroid table
+//
+//   NOT a terrain render mesh. Terrain comes from CPT ART files.
+//   The Z≈-3m vertex positions = slightly below floor level (AI nav convention).
+//
+// ── COMPANION FILE ────────────────────────────────────────────────────────────
+//
+//   *_P.psp = "PBSP" Precomputed Path BSP tree
+//     Magic: 'PBSP' at offset 0, followed by "PBSP_HEADER" string
+//     Used to accelerate AI pathfinding queries at runtime.
+//
+// ── HEADER (11 pairs × 8B) ───────────────────────────────────────────────────
+//
+//   Format: [uint32 offset, uint32 count] × 11
+//
+//   pair[0]: off=9=Magic, cnt=filesize
+//   pair[1]: off=101, cnt=0           (empty/unused)
+//   pair[2]: off=0x772BC, cnt=20      SubMesh centroid table (20 × 12B)
+//                                       [+00] uint32 tex_idx
+//                                       [+04] uint32 centroid_cnt
+//                                       [+08] uint32 centroid_ptr (→ float3 array)
+//   pair[3]: off=0x7A404, cnt=1364    Waypoint vertex buffer (1364 × 24B)
+//                                     Vertex format: see below
+//   pair[4]: off=0x76DD0, cnt=78      Lightmap SHPX offset table (78 × 16B)
+//   pair[5]: off=0x93728, cnt=543     AI graph data (stride ~159B)
+//   pair[6]: off=0x84BFC, cnt=244     AI node data (stride ~244B)
+//   pair[7]: off=0x934BC, cnt=5       AI graph metadata
+//   pair[8]: off=0x830A4, cnt=17      AI data (stride ~63B)
+//   pair[9]: off=0x834D0, cnt=15      AI data (stride ~265B)
+//   pair[10]: off=0x8445C, cnt=244    AI edge list (244 × 8B = byte-offset pairs)
+//                                       [+00] uint32 ptr_to_node_in_pair6
+//                                       [+04] uint32 ptr_to_node_in_pair6
+//
+// ── INDEX BUFFER ─────────────────────────────────────────────────────────────
+//
+//   IB starts at 0x773AC (NOT derived from header — hardcoded for 1_1_P.bpd).
+//   IB end = pair[3].off = 0x7A404 (= waypoint VB start).
+//   IB length = (0x7A404 - 0x773AC) / 2 = 6188 uint16 indices.
+//
+//   The IB is the ONLY buffer between pair[2] area and pair[3].
+//   Decode: standard tristrip (NO AA-restart markers in this IB).
+//   Split strips by spatial jump > threshold (20m) in XY between adjacent verts.
+//
+//   IB_ByteOff field in each vertex (at +20) points back into the IB —
+//   each vertex knows its first usage position in the IB.
+//
+// ── WAYPOINT VERTEX FORMAT (24B stride) ──────────────────────────────────────
+//
+//   [+00..+07]  float2  XY       world-space position (Z≈-3m below floor)
+//   [+08..+0B]  float   Z        typically -4.4..0.0
+//   [+0C..+0F]  uint32  VB_Ptr   runtime pointer (absolute file offset)
+//   [+10..+13]  uint32  Decl_Ptr runtime pointer
+//   [+14..+17]  uint32  IB_ByteOff  byte offset into IB where this vertex appears
+//
+//   Z values:
+//     -5..-3m : main level floor (majority of waypoints)
+//     -3..-1m : elevated areas (bridges, ramps)
+//     -1..0m  : near-surface (entry points)
+//
+// ── SPATIAL COVERAGE ─────────────────────────────────────────────────────────
+//
+//   Waypoint mesh: X -150..173, Y -92..141 (partial coverage vs CPT)
+//   CPT full level: X -252..234, Y -179..170
+//   BPD coverage is ~60% of level area — AI only navigates accessible areas.
+//
+// ── SHPX TEXTURES ─────────────────────────────────────────────────────────────
+//
+//   Lightmap textures referenced by pair[4] offset table.
+//   Same SHPX format as in CPT files.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+typedef struct {
+    uint32 Offset   <format=hex>;
+    uint32 Count;
+} BPD_PAIR;
+
+typedef struct {
+    float   X;
+    float   Y;
+    float   Z        <comment="typically -4.4..0.0, slightly below floor">;
+    uint32  VB_Ptr   <format=hex, comment="runtime pointer">;
+    uint32  Decl_Ptr <format=hex, comment="runtime pointer">;
+    uint32  IB_ByteOff <format=hex, comment="byte offset of this vertex's first IB use">;
+} BPD_WAYPOINT_VERTEX <size=24>;
+
+typedef struct {
+    uint32  TexIdx;
+    uint32  CentroidCnt;
+    uint32  CentroidPtr <format=hex>;
+} BPD_SUBMESH_ENTRY <size=12>;
+
+typedef struct {
+    uint32  NodePtrA <format=hex, comment="byte ptr into pair[6] node data">;
+    uint32  NodePtrB <format=hex, comment="byte ptr into pair[6] node data">;
+} BPD_EDGE <size=8>;
+
+BPD_PAIR Pairs[11];
+
+Printf("=== MOHF BPD v0.9.0 ===\n");
+Printf("Purpose: AI Pathfinding data (waypoint mesh + graph)\n");
+Printf("Companion: *_P.psp = PBSP precomputed path BSP\n");
+Printf("\n--- Pairs ---\n");
+local int i;
+for (i = 0; i < 11; i++) {
+    Printf("pair[%2d]: off=0x%06X  cnt=%d\n", i, Pairs[i].Offset, Pairs[i].Count);
+}
+
+// SubMesh centroid table (pair[2])
+local quad sm_off = 0x772BC;
+local int  sm_cnt = 20;
+FSeek(sm_off);
+Printf("\n--- SubMesh Centroids (pair[2], 20 x 12B) ---\n");
+local int j;
+for (j = 0; j < sm_cnt; j++) {
+    local uint32 tex   = ReadUInt(sm_off + j*12);
+    local uint32 cnt_v = ReadUInt(sm_off + j*12 + 4);
+    local uint32 ptr   = ReadUInt(sm_off + j*12 + 8);
+    local float  cx    = ReadFloat(ptr);
+    local float  cy    = ReadFloat(ptr + 4);
+    Printf("  [%2d] tex=%3d  centroids=%d  center=(%.0f,%.0f)\n",
+           j, tex, cnt_v, cx, cy);
+}
+
+// IB
+local quad ib_off = 0x773AC;
+local quad vb_off = 0x7A404;
+local int  ib_cnt = (vb_off - ib_off) / 2;
+Printf("\n--- Index Buffer ---\n");
+Printf("IB: 0x%X .. 0x%X  (%d uint16 indices)\n", ib_off, vb_off, ib_cnt);
+Printf("Decode: tristrip, split on spatial jump >20m in XY\n");
+Printf("NO 0xFFFF markers. NO NV2A AA-restart in this IB.\n");
+
+// Waypoint VB
+Printf("\n--- Waypoint Vertices (pair[3], 1364 x 24B) ---\n");
+Printf("VB: 0x%X  (1364 vertices, stride 24B)\n", vb_off);
+Printf("Format: float3 XYZ, u32 VB_Ptr, u32 Decl_Ptr, u32 IB_ByteOff\n");
+local float zmin = 9999.0, zmax = -9999.0;
+for (j = 0; j < 1364; j++) {
+    local float zv = ReadFloat(vb_off + j*24 + 8);
+    if (zv < zmin) zmin = zv;
+    if (zv > zmax) zmax = zv;
+}
+Printf("Z range: %.2f .. %.2f\n", zmin, zmax);
+
+Printf("\n--- AI Edge List (pair[10], 244 x 8B) ---\n");
+Printf("Each entry: (ptr_A, ptr_B) into pair[6] node data\n");
+
+FSeek(sm_off);
+BPD_SUBMESH_ENTRY SubMeshTable[20];

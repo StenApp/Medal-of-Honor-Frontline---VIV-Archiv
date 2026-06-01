@@ -1,0 +1,151 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mohf_cdb.bt
+//   Authors: Sten + Claude
+//   Version: 0.4.0
+//   Purpose: Medal of Honor Frontline - CDB (Collision Database)
+//  Category: Game
+// File Mask: *.cdb
+//  ID Bytes: [variable]
+//   History:
+//     0.3.0  2026-05-28  Initial.
+//     0.4.0  2026-05-30  Coverage analysis: 97% of CDB verts within 1m of CPT.
+//                        Confirmed pure collision (no render). Z range confirmed.
+//
+// ── PURPOSE ───────────────────────────────────────────────────────────────────
+//
+//   CDB = Collision Database
+//   Pure collision BSP — NO render geometry.
+//   Used for player movement, projectile collision, AI line-of-sight.
+//
+//   Two variants:
+//     *_C.cdb       Master collision (whole level, no chunks)
+//     *_C_cN.cdb    Chunk collision (c0..c6)
+//
+// ── CPT VS CDB COVERAGE ───────────────────────────────────────────────────────
+//
+//   CDB BBox (all chunks): X -232..234, Y -179..169, Z -10.9..16.1
+//   CPT BBox (all chunks): X -252..234, Y -179..170, Z -11.8..16.5
+//
+//   97% of CDB vertices have a CPT vertex within 1m → near-perfect coverage.
+//   Remaining 3% (>1m): ceilings, invisible walls, internal collision surfaces
+//   that have no visible render geometry.
+//
+//   Total: 25298 CDB vertices, 31567 edges across all 7 chunks.
+//
+// ── HEADER ────────────────────────────────────────────────────────────────────
+//
+//   [+00] Unk0         uint32
+//   [+04] Unk4         uint32
+//   [+08] VtxCount     uint32   total number of collision vertices
+//   [+0C] VtxStart     uint32   = 0x74 (file offset to vertex array)
+//   [+10] EdgeCount    uint32   number of edges in SecA
+//   [+14] Unk14        uint32
+//   [+18] Unk18        uint32
+//   [+1C] Unk1C        uint32
+//   [+20] Unk20        uint32
+//   [+24] SecB_off     uint32
+//   [+28] SecB_cnt     uint32
+//   [+2C] Unk2C        uint32
+//   [+30] Unk30        uint32
+//   [+34] SecA_cnt     uint32   = EdgeCount (redundant)
+//   ...
+//   SecA offset from header[36]
+//
+// ── VERTEX ARRAY (at VtxStart = 0x74) ────────────────────────────────────────
+//
+//   float3 per vertex, stride 12B:
+//     [+00] float X
+//     [+04] float Y
+//     [+08] float Z
+//
+//   Level Z range: -10.9 .. +16.1 m
+//
+// ── SECTION A: EDGE LIST ──────────────────────────────────────────────────────
+//
+//   EdgeCount entries × 16B each:
+//     [+00] uint32 VtxPtr0   absolute file offset to vertex 0
+//     [+04] uint32 VtxPtr1   absolute file offset to vertex 1
+//     [+08] uint32 PlaneA    (pointer or index)
+//     [+0C] uint32 PlaneB    (pointer or index)
+//
+//   VtxPtr → vertex index = (VtxPtr - VtxStart) / 12
+//
+// ── USAGE ─────────────────────────────────────────────────────────────────────
+//
+//   For visualization: render all edges as line segments.
+//   Edges cover: canal walls, bridge geometry, building outlines,
+//                floor/ceiling planes, and internal BSP surfaces.
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+typedef struct {
+    uint32 Unk0;
+    uint32 Unk4;
+    uint32 VtxCount;
+    uint32 VtxStart     <format=hex, comment="= 0x74">;
+    uint32 EdgeCount;
+    uint32 Unk14;
+    uint32 Unk18;
+    uint32 Unk1C;
+    uint32 Unk20;
+    uint32 SecB_Off     <format=hex>;
+    uint32 SecB_Cnt;
+    uint32 Unk2C;
+    uint32 Unk30;
+    uint32 SecA_Cnt     <comment="= EdgeCount">;
+    uint32 Unk34;
+    uint32 SecA_Off     <format=hex>;
+} CDB_HEADER;
+
+typedef struct {
+    float X;
+    float Y;
+    float Z;
+} CDB_VERTEX <size=12>;
+
+typedef struct {
+    uint32 VtxPtr0   <format=hex, comment="absolute file offset → vertex 0">;
+    uint32 VtxPtr1   <format=hex, comment="absolute file offset → vertex 1">;
+    uint32 PlaneA    <format=hex>;
+    uint32 PlaneB    <format=hex>;
+} CDB_EDGE <size=16>;
+
+CDB_HEADER Hdr;
+
+Printf("=== MOHF CDB v0.4.0 ===\n");
+Printf("Purpose: Collision geometry only (no render)\n");
+Printf("VtxCount:  %d\n", Hdr.VtxCount);
+Printf("EdgeCount: %d\n", Hdr.EdgeCount);
+Printf("VtxStart:  0x%X\n", Hdr.VtxStart);
+Printf("SecA_Off:  0x%X\n", Hdr.SecA_Off);
+
+FSeek(Hdr.VtxStart);
+CDB_VERTEX Vertices[Hdr.VtxCount];
+
+// Compute bounding box
+local float xmin=99999, xmax=-99999, ymin=99999, ymax=-99999, zmin=99999, zmax=-99999;
+local int i;
+for (i = 0; i < Hdr.VtxCount; i++) {
+    if (Vertices[i].X < xmin) xmin = Vertices[i].X;
+    if (Vertices[i].X > xmax) xmax = Vertices[i].X;
+    if (Vertices[i].Y < ymin) ymin = Vertices[i].Y;
+    if (Vertices[i].Y > ymax) ymax = Vertices[i].Y;
+    if (Vertices[i].Z < zmin) zmin = Vertices[i].Z;
+    if (Vertices[i].Z > zmax) zmax = Vertices[i].Z;
+}
+Printf("BBox: X %.1f..%.1f  Y %.1f..%.1f  Z %.1f..%.1f\n",
+       xmin, xmax, ymin, ymax, zmin, zmax);
+
+FSeek(Hdr.SecA_Off);
+CDB_EDGE Edges[Hdr.EdgeCount];
+
+Printf("\nEdge[0]: VtxPtr0=0x%X VtxPtr1=0x%X\n",
+       Edges[0].VtxPtr0, Edges[0].VtxPtr1);
+Printf("  → VtxIdx0=%d  VtxIdx1=%d\n",
+       (Edges[0].VtxPtr0 - Hdr.VtxStart)/12,
+       (Edges[0].VtxPtr1 - Hdr.VtxStart)/12);
