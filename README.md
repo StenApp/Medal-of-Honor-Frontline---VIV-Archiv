@@ -3,10 +3,13 @@
 Reverse engineering and tooling for **Medal of Honor: Frontline** (EA Games, 2002) on PS2 and Xbox.  
 Covers archive formats, audio extraction, and format documentation.
 
-<img width="1728" height="1104" alt="Screenshot 2026-06-01 131949" src="https://github.com/user-attachments/assets/6cbdc2a1-a2f1-496d-a5c7-692b117ffe90" />
+<img width="1285" height="847" alt="Screenshot 2026-06-02 232348" src="https://github.com/user-attachments/assets/3f1d3df4-8d91-4123-87d8-36c70d25b28b" />
+
+---<img width="1285" height="851" alt="Screenshot 2026-06-02 232503" src="https://github.com/user-attachments/assets/474de3f2-7f74-422d-ade9-97db9491a632" />
+
+<img width="1288" height="850" alt="Screenshot 2026-06-02 232701" src="https://github.com/user-attachments/assets/2b3f92c1-14c9-42db-903b-f047c031d989" />
 
 
----
 
 ## Tools in this repo
 
