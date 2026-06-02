@@ -35,3 +35,8 @@ Loading epanzerschreck.msh...
   VBO: 422v 280t hochgeladen
 Loading rifle_ammo_med.msh...
   VBO: 28v 14t hochgeladen
+
+=== 2026-06-02 23:29:44 ===
+HINWEIS: src/EA_Image nicht gefunden — nur fmt=125 Texturen werden geladen
+HINWEIS: reversebox nicht gefunden — langsamer Python-Fallback
+MOHF Viewer  |  G=Geo  A=ART.cpt  M=MSH/MPK  R=Reset  T=Top  F=Front  ESC=Quit

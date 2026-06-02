@@ -261,7 +261,7 @@ def load_geometry(cpt_paths, mapping):
             for i in range(vc2):
                 b=vp+i*S
                 all_verts.append([f32(d,b),f32(d,b+4),f32(d,b+8)])
-                all_uvs.append([f32(d,b+20), f32(d,b+24)])
+                all_uvs.append([1.0 - f32(d,b+20), f32(d,b+24)])
             for a,b,c in decode_nv2a([u16(d,ip2+j*2) for j in range(ic2)],vc2):
                 if a<vc2 and b<vc2 and c<vc2:
                     all_tris.append([a+voff,b+voff,c+voff]); all_tt.append(ti)
@@ -280,6 +280,120 @@ def load_geometry(cpt_paths, mapping):
     return V,UV,T,TT,vn.astype(np.float32)
 
 # ── File dialogs ───────────────────────────────────────────────────────────────
+# ── MSH/MPK Loader ────────────────────────────────────────────────────────────
+def load_msh_block(d, base=0):
+    """
+    BT-konforme MSH/MPK Implementierung.
+    VtxPtr/IdxPtr sind relativ zu block-start (base).
+    """
+    if u32(d,base) != 0x0B: return None
+    mesh_table_off = u32(d, base+0x18)
+    mesh_cnt       = u32(d, base+0x1c)
+
+    all_verts=[]; all_uvs=[]; all_tris=[]; all_tt=[]; mat_hashes=[]; voff=0
+
+    for mi in range(mesh_cnt):
+        mt     = base + mesh_table_off + mi*32
+        mb_rel = u32(d, mt+8)
+        mat_rel= u32(d, mt+4)
+        if mb_rel == 0: continue
+        mb_abs = base + mb_rel
+
+        vtx_ptr = base + u32(d, mb_abs+12)
+        idx_ptr = base + u32(d, mb_abs+16)
+        vc      = u16(d, mb_abs+20)
+        ic      = u16(d, mb_abs+22)
+
+        if vc==0 or ic==0: continue
+        if vtx_ptr+vc*28>len(d) or idx_ptr+ic*2>len(d): continue
+
+        for vi in range(vc):
+            b = vtx_ptr + vi*28
+            x,y,z = f32(d,b), f32(d,b+4), f32(d,b+8)
+            if not(abs(x)<1e6 and abs(y)<1e6 and abs(z)<1e6): x=y=z=0.0
+            all_verts.append([x, y, z])
+            all_uvs.append([f32(d,b+20), 1.0 - f32(d,b+24)])
+
+        strip = [u16(d, idx_ptr+i*2) for i in range(ic)]
+        n_before = len(all_tris)
+        for i in range(len(strip)-2):
+            a,b_,c = strip[i], strip[i+1], strip[i+2]
+            if a!=b_ and b_!=c and a!=c:
+                if i%2==0: all_tris.append([a+voff, b_+voff, c+voff])
+                else:       all_tris.append([a+voff, c+voff, b_+voff])
+        # tex_idx = mi (Mesh-Index = Material-Index)
+        all_tt.extend([mi] * (len(all_tris) - n_before))
+        voff += vc
+
+        if mat_rel:
+            mat_abs = base + mat_rel
+            if mat_abs+0x40 <= len(d):
+                mat_hashes.append((u32(d,mat_abs+0x34), u32(d,mat_abs+0x38)))
+
+    if not all_verts: return None
+    return (np.array(all_verts, dtype=np.float32),
+            np.array(all_uvs,   dtype=np.float32),
+            np.array(all_tris,  dtype=np.int32),
+            np.array(all_tt,    dtype=np.int32),
+            mat_hashes)
+
+def load_msh_file(path):
+    d = open(path,'rb').read()
+    return load_msh_block(d, 0)
+
+def load_msh_textures(d, base=0):
+    """Lädt embedded SHPX Texturen aus MSH/MPK Block. Gibt {mesh_idx: (w,h,arr)} zurück."""
+    textures = {}
+    mesh_table_off = u32(d, base+0x18)
+    mesh_cnt       = u32(d, base+0x1c)
+    for mi in range(mesh_cnt):
+        mt      = base + mesh_table_off + mi*32
+        mat_rel = u32(d, mt+4)
+        if not mat_rel: continue
+        mat_abs = base + mat_rel
+        pix_ptr_rel = u32(d, mat_abs+0x20)
+        if pix_ptr_rel > 0x80:
+            # pix_ptr ist relativ zu base → SHPX header = base + pix_ptr_rel - 0x80
+            shpx_base = base + pix_ptr_rel - 0x80
+            if shpx_base+8 > len(d): continue
+            if d[shpx_base:shpx_base+4] != b'SHPX': continue
+            sz = u32(d, shpx_base+4)
+            if sz > 0 and shpx_base+sz <= len(d):
+                r = decode_shpx(d[shpx_base:shpx_base+sz])
+                if r: textures[mi] = r
+    return textures
+
+def load_mpk_file(path):
+    d = open(path,'rb').read()
+    if u32(d,0) != 0: return []
+    n = u32(d, 0x0c)
+    # Offset-Tabelle nach dem 32B Header
+    offsets = [u32(d, 32+i*4) for i in range(n)]
+    results = []
+    for off in offsets:
+        r = load_msh_block(d, off)
+        if r: results.append(r)
+    return results
+
+def load_tpac_textures(path):
+    """Liest TPAC/TPK und gibt {hash: (w,h,arr)} zurück."""
+    d = open(path,'rb').read()
+    textures = {}
+    # TPAC: Magic 'TPAC' oder 'TPK\0'
+    p = 0
+    while True:
+        np_ = d.find(b'SHPX', p)
+        if np_ < 0: break
+        sz = u32(d, np_+4)
+        if sz >= 16 and np_+sz <= len(d):
+            r = decode_shpx(d[np_:np_+sz])
+            if r:
+                # Hash aus Offset als Key
+                textures[np_] = r
+        p = np_+4
+    print(f"  TPAC: {len(textures)} Texturen")
+    return textures
+
 def ask_file(title, ft=None):
     import tkinter as tk; from tkinter import filedialog
     r=tk.Tk(); r.withdraw(); r.attributes('-topmost',True)
@@ -297,8 +411,8 @@ class App:
     def __init__(self):
         self.verts=self.uvs=self.tris=self.tri_tex=self.normals=None
         self.gl_tex={}; self.art_data={}
-        self.rot_x=45.0; self.rot_y=20.0; self.pan_x=0.0; self.pan_y=0.0; self.zoom=1.0
-        self.center=np.zeros(3); self.scale=1.0
+        self.rot_x=-45.0; self.rot_y=20.0; self.pan_x=0.0; self.pan_y=0.0; self.zoom=1.0
+        self.center=np.zeros(3); self.scale=1.0; self.is_msh=False
         self.mb_l=self.mb_r=False; self.last_pos=(0,0)
         self.status="G=Geo  A=ART.cpt  ESC=quit"; self.W=1280; self.H=800
         self.pending=None; self.vbo=None; self.ibo=None; self.ibo_n=0
@@ -335,7 +449,7 @@ class App:
         self.radius=float(np.linalg.norm(V-self.center,axis=1).max())
         horiz=np.abs(V[:,:2]-self.center[:2]).max()
         self.scale=1.0/max(horiz,1e-6)
-        self.rot_x=45; self.rot_y=20; self.pan_x=self.pan_y=0; self.zoom=1.0
+        self.rot_x=-45; self.rot_y=20; self.pan_x=self.pan_y=0; self.zoom=1.0
         self.vbo=self.ibo=None
         print(f"  Level-Radius: {self.radius:.1f} units")
 
@@ -353,8 +467,8 @@ class App:
         glTranslatef(self.pan_x*0.004,self.pan_y*0.004,-3/max(self.zoom,0.001))
         glRotatef(self.rot_x,1,0,0); glRotatef(self.rot_y,0,0,1)
         glScalef(self.scale,self.scale,self.scale)
-        #glMultMatrixf([1,0,0,0, 0,0,1,0, 0,-1,0,0, 0,0,0,1])
-        glMultMatrixf([1,0,0,0, 0,0,-1,0, 0,1,0,0, 0,0,0,1])
+        if not self.is_msh:
+            glMultMatrixf([1,0,0,0, 0,0,-1,0, 0,1,0,0, 0,0,0,1])
         glTranslatef(-self.center[0],-self.center[1],-self.center[2])
         glLightfv(GL_LIGHT0,GL_POSITION,[1,2,3,0])
 
@@ -420,7 +534,7 @@ def _reload_geo():
     else:
         m={}
     r=load_geometry(app.cpt_paths,m)
-    if r[0] is not None: app.set_geo(*r)
+    if r[0] is not None: app.set_geo(*r); app.is_msh=False
 
 def cb_resize(w,h): app.W,app.H=w,max(h,1)
 def cb_mb(win,btn,act,mod):
@@ -435,12 +549,13 @@ def cb_scroll(win,xo,yo): app.zoom*=1.1 if yo>0 else 0.9
 def cb_key(win,key,sc,act,mod):
     if act not in (glfw.PRESS,glfw.REPEAT): return
     if key in (glfw.KEY_ESCAPE,glfw.KEY_Q): glfw.set_window_should_close(win,True)
-    elif key==glfw.KEY_R: app.rot_x=45;app.rot_y=20;app.pan_x=app.pan_y=0;app.zoom=1
+    elif key==glfw.KEY_R: app.rot_x=-45;app.rot_y=20;app.pan_x=app.pan_y=0;app.zoom=1
     elif key==glfw.KEY_T: app.rot_x=-89;app.rot_y=0
     elif key==glfw.KEY_F: app.rot_x=0;app.rot_y=0
-    elif key==glfw.KEY_I: app.rot_x=45;app.rot_y=30
+    elif key==glfw.KEY_I: app.rot_x=-45;app.rot_y=30
     elif key==glfw.KEY_G: app.pending='geo'
     elif key==glfw.KEY_A: app.pending='art'
+    elif key==glfw.KEY_M: app.pending='msh'
 
 def main():
     if not glfw.init(): sys.exit(1)
@@ -455,7 +570,7 @@ def main():
     glfw.set_scroll_callback(win,cb_scroll)
     glfw.set_key_callback(win,cb_key)
     app.setup_gl()
-    print("MOHF Viewer  |  G=Geo  A=ART.cpt  R=Reset  T=Top  F=Front  ESC=Quit")
+    print("MOHF Viewer  |  G=Geo  A=ART.cpt  M=MSH/MPK  R=Reset  T=Top  F=Front  ESC=Quit")
 
     while not glfw.window_should_close(win):
         glfw.poll_events()
@@ -478,6 +593,53 @@ def main():
                         app.upload_textures()
                         if app.cpt_paths:
                             print("  Rebuild Mapping..."); _reload_geo()
+                elif kind=='msh':
+                    paths=ask_files('MSH/MPK Dateien',[('MSH/MPK','*.msh *.mpk'),('Alle','*.*')])
+                    if paths:
+                        all_v=[]; all_uv=[]; all_t=[]; all_tt=[]; voff=0
+                        msh_tex_data={}; tex_offset=0
+                        for path in paths:
+                            d=open(path,'rb').read()
+                            ext=os.path.splitext(path)[1].lower()
+                            if ext=='.mpk':
+                                n=u32(d,0x0c)
+                                offsets=[u32(d,32+i*4) for i in range(n)]
+                                blocks=[(d,off) for off in offsets]
+                            else:
+                                blocks=[(d,0)]
+                            for d_,base in blocks:
+                                r=load_msh_block(d_,base)
+                                if r is None: continue
+                                V,UV,T,TT,mh=r
+                                if len(T)==0: continue
+                                all_v.append(V); all_uv.append(UV)
+                                all_t.append(T+voff)
+                                all_tt.extend([ti+tex_offset for ti in TT])
+                                # Texturen laden
+                                texs=load_msh_textures(d_,base)
+                                for mi,(w,h,arr) in texs.items():
+                                    msh_tex_data[mi+tex_offset]=(w,h,arr)
+                                tex_offset+=len(mh) if mh else 1
+                                voff+=len(V)
+                            print(f"  {os.path.basename(path)}: {voff}v")
+                        if all_v:
+                            V=np.concatenate(all_v); UV=np.concatenate(all_uv)
+                            T=np.concatenate(all_t); TT=np.array(all_tt,dtype=np.int32)
+                            vn=np.zeros_like(V)
+                            if len(T):
+                                e1=V[T[:,1]]-V[T[:,0]]; e2=V[T[:,2]]-V[T[:,0]]
+                                fn=np.cross(e1,e2); l=np.linalg.norm(fn,axis=1,keepdims=True); l[l==0]=1; fn/=l
+                                np.add.at(vn,T[:,0],fn); np.add.at(vn,T[:,1],fn); np.add.at(vn,T[:,2],fn)
+                                l2=np.linalg.norm(vn,axis=1,keepdims=True); l2[l2==0]=1; vn/=l2
+                            app.set_geo(V,UV,T,TT,vn.astype(np.float32))
+                            app.is_msh=True
+                            # Texturen hochladen
+                            if msh_tex_data:
+                                app.art_data=msh_tex_data
+                                app.upload_textures()
+                                print(f"  {len(msh_tex_data)} Texturen geladen")
+                            glfw.set_window_title(win,f"MOHF Viewer MSH [{len(V)}v {len(T)}t]")
+                            print(f"  Gesamt: {len(V)}v {len(T)}t")
             except Exception as e:
                 import traceback; traceback.print_exc(); print(f"Fehler: {e}")
         app.draw(); glfw.swap_buffers(win)
