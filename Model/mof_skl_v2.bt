@@ -1,0 +1,222 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mof_skl.bt
+//   Authors: Sten
+//   Version: 2.1.0
+//   Purpose: Medal of Honor Frontline (Xbox) - SKL Skeleton
+//  Category: Game
+// File Mask: *.skl
+//
+// ── FORMAT ───────────────────────────────────────────────────────────────────
+//
+//  Header (24 bytes):
+//    0x00  char[4]   Magic = "1LKS"
+//    0x04  uint32    BoneCountPacked  → BoneCount = value >> 16
+//    0x08  uint32    HierStart   abs offset to hierarchy linked list
+//    0x0C  uint32    NamesOff    abs offset to bone name table (always 0x700)
+//    0x10  uint32    AttachCount number of attachment points
+//    0x14  uint32    AttOff      abs offset to attachment entry table
+//
+//  Bind-pose block (BoneCount × 32 bytes, starts at 0x20):
+//    Bones 0..N (right side + center, typically 0..27 for Human.skl):
+//      0x00  float  TX   local translation X (relative to parent)
+//      0x04  float  TY   local translation Y
+//      0x08  float  TZ   local translation Z
+//      0x0C  uint32 IdxA engine animation channel index (0xFFFFFFFF = root)
+//      0x10  float  QX   bind-pose half-quaternion X
+//      0x14  float  QY   bind-pose half-quaternion Y
+//      0x18  float  QZ   bind-pose half-quaternion Z
+//      0x1C  uint32 IdxB engine animation channel index
+//      QW = sqrt(max(0, 1 - QX²-QY²-QZ²))
+//    Mirrored bones (left side): all zeros, engine mirrors at runtime.
+//    Engine-internal bones (legs, late fingers): zeros or int16 engine data,
+//      displayed as T=(0,0,0) via safe-float clamping.
+//
+//  Bone name table (BoneCount × 20 bytes, at NamesOff):
+//    0x00  uint32   NodePtr  abs pointer into hierarchy section
+//    0x04  char[16] Name     null-padded ASCII
+//
+//  Hierarchy linked list (at HierStart, variable length):
+//    Per node:
+//      byte[0] ChildCount  number of child pointers that follow
+//      byte[1] TreeDepth   0 = root
+//      byte[2] BoneIndex   index in name table
+//      byte[3] 0x00
+//      uint32  ParentPtr   abs ptr to parent node (root → self)
+//      uint32  ChildPtr[ChildCount]
+//    Last node links back to root (ring structure).
+//
+//  Attachment matrices (AttachCount × 64 bytes, at AttOff - AttachCount*64):
+//    float32 4×4 row-major world transform for each attachment point.
+//    Translation = row 3 (M[12..15]).
+//
+//  Attachment entries (AttachCount × 24 bytes, at AttOff):
+//    0x00  char[15]  Name        e.g. "rt_hand", "Fire"
+//    0x0F  uint8     Marker      always 0xCC
+//    0x10  uint32    BoneIndex   parent bone index in name table
+//    0x14  uint32    XformOffset abs offset to this attachment's 64-byte matrix
+//
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// ── Safe-float via bit pattern ────────────────────────────────────────────────
+// IEEE 754: exponent bits = 0x7F800000. If (bits & 0x7F800000) == 0x7F800000 → NaN/Inf.
+// Additionally clamp values with |v| > 10 (engine pointer residuals).
+
+local uint32 _bits;
+
+string SafeFloatStr(float v) {
+    _bits = ReadUInt(FTell() - 4);  // not usable inline; use in loop below
+    string s;
+    SPrintf(s, "%.4f", v);
+    return s;
+}
+
+// ── Structs ───────────────────────────────────────────────────────────────────
+
+typedef struct {
+    float  TX;
+    float  TY;
+    float  TZ;
+    uint32 IdxA <format=hex, comment="anim channel; 0xFFFFFFFF=root">;
+    float  QX;
+    float  QY;
+    float  QZ;
+    uint32 IdxB <format=hex, comment="anim channel">;
+} SKL_BINDPOSE <size=32, read=ReadBP>;
+
+string ReadBP(SKL_BINDPOSE& b) {
+    string s;
+    SPrintf(s, "T=(%.4f,%.4f,%.4f)", b.TX, b.TY, b.TZ);
+    return s;
+}
+
+typedef struct {
+    uint32 NodePtr <format=hex>;
+    char   Name[16];
+} SKL_BONE_NAME <size=20, read=ReadBN>;
+
+string ReadBN(SKL_BONE_NAME& b) { return b.Name; }
+
+typedef struct {
+    uint8  ChildCount;
+    uint8  TreeDepth;
+    uint8  BoneIndex;
+    uint8  Pad;
+    uint32 ParentPtr <format=hex>;
+    if (ChildCount >= 1) uint32 ChildPtr1 <format=hex>;
+    if (ChildCount >= 2) uint32 ChildPtr2 <format=hex>;
+    if (ChildCount >= 3) uint32 ChildPtr3 <format=hex>;
+    if (ChildCount >= 4) uint32 ChildPtr4 <format=hex>;
+    if (ChildCount >= 5) uint32 ChildPtr5 <format=hex>;
+} SKL_NODE <read=ReadND>;
+
+string ReadND(SKL_NODE& n) {
+    string s;
+    SPrintf(s, "depth=%d bone=%d children=%d", n.TreeDepth, n.BoneIndex, n.ChildCount);
+    return s;
+}
+
+typedef struct {
+    float M[16];
+} SKL_MATRIX64 <size=64, comment="4x4 row-major; translation = M[12..15]">;
+
+typedef struct {
+    char   Name[15];
+    uint8  Marker  <comment="always 0xCC">;
+    uint32 BoneIndex;
+    uint32 XformOffset <format=hex, comment="abs offset to 64-byte matrix">;
+} SKL_ATTACH_ENTRY <size=24, read=ReadAE>;
+
+string ReadAE(SKL_ATTACH_ENTRY& a) {
+    string s;
+    SPrintf(s, "%s → bone %d", a.Name, a.BoneIndex);
+    return s;
+}
+
+// ── Parse header ──────────────────────────────────────────────────────────────
+
+FSeek(0);
+char   Magic[4]         <comment="1LKS">;
+uint32 BoneCountPacked  <format=hex, comment="BoneCount = this >> 16">;
+uint32 HierStart        <format=hex, comment="offset to hierarchy linked list">;
+uint32 NamesOff         <format=hex, comment="offset to bone name table">;
+uint32 AttachCount      <comment="number of attachment points">;
+uint32 AttOff           <format=hex, comment="offset to attachment entry table">;
+
+local uint32 boneCount   = BoneCountPacked >> 16;
+local uint32 attachCount = AttachCount;
+local uint32 namesOff    = NamesOff;
+local uint32 attOff      = AttOff;
+local uint32 hierStart   = HierStart;
+local uint32 matStart    = attOff - attachCount * 64;
+
+Printf("=== SKL ===\n");
+Printf("BoneCount:   %d\n",   boneCount);
+Printf("AttachCount: %d\n",   attachCount);
+Printf("NamesOff:    0x%X\n", namesOff);
+Printf("HierStart:   0x%X\n", hierStart);
+Printf("AttOff:      0x%X\n", attOff);
+Printf("MatStart:    0x%X\n", matStart);
+
+// ── Bind-pose ─────────────────────────────────────────────────────────────────
+
+FSeek(0x20);
+SKL_BINDPOSE BindPose[boneCount];
+
+// ── Bone names ────────────────────────────────────────────────────────────────
+
+FSeek(namesOff);
+SKL_BONE_NAME BoneNames[boneCount];
+
+// ── Hierarchy nodes ───────────────────────────────────────────────────────────
+
+local int    i;
+local uint32 bits_tx, bits_ty, bits_tz;
+local float  tx, ty, tz;
+
+for (i = 0; i < (int)boneCount; i++) {
+    FSeek(BoneNames[i].NodePtr);
+    SKL_NODE Node;
+
+    // Bit-pattern safe-float: NaN/Inf if exponent all-ones (& 0x7F800000 == 0x7F800000)
+    bits_tx = ReadUInt(0x20 + i*32 + 0);
+    bits_ty = ReadUInt(0x20 + i*32 + 4);
+    bits_tz = ReadUInt(0x20 + i*32 + 8);
+
+    tx = ((bits_tx & 0x7F800000) == 0x7F800000) ? 0.0 :
+         (BindPose[i].TX >  10.0 || BindPose[i].TX < -10.0) ? 0.0 : BindPose[i].TX;
+    ty = ((bits_ty & 0x7F800000) == 0x7F800000) ? 0.0 :
+         (BindPose[i].TY >  10.0 || BindPose[i].TY < -10.0) ? 0.0 : BindPose[i].TY;
+    tz = ((bits_tz & 0x7F800000) == 0x7F800000) ? 0.0 :
+         (BindPose[i].TZ >  10.0 || BindPose[i].TZ < -10.0) ? 0.0 : BindPose[i].TZ;
+
+    Printf("bone[%2d] %-20s T=(%8.4f,%8.4f,%8.4f) depth=%d\n",
+        i, BoneNames[i].Name, tx, ty, tz, Node.TreeDepth);
+}
+
+// ── Attachment matrices ───────────────────────────────────────────────────────
+
+if (attachCount > 0 && matStart > 0) {
+    FSeek(matStart);
+    SKL_MATRIX64 AttachMatrix[attachCount]
+        <comment="4x4 world transform; row3=translation">;
+}
+
+// ── Attachment entries ────────────────────────────────────────────────────────
+
+if (attachCount > 0) {
+    FSeek(attOff);
+    SKL_ATTACH_ENTRY AttachEntry[attachCount];
+
+    Printf("\nAttachments:\n");
+    for (i = 0; i < (int)attachCount; i++) {
+        Printf("  [%d] %-16s bone=%d  xform=0x%X\n",
+            i, AttachEntry[i].Name,
+            AttachEntry[i].BoneIndex,
+            AttachEntry[i].XformOffset);
+    }
+}
