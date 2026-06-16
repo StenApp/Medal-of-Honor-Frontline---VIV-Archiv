@@ -1,0 +1,138 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: mof_emt.bt
+//   Authors: Sten
+//   Version: 1.0.0
+//   Purpose: Medal of Honor Frontline - EMT Entity Motion Table
+//  Category: Game
+// File Mask: *.emt
+//  ID Bytes: 00 54 4D 45
+//
+//  HINWEIS: Aus Session-Snippets rekonstruiert. Header/Globals/Typedefs/Loop-Logik
+//  sind 1:1 aus der Session; in 010 Editor gegenpruefen (maszgeblich: Chat 73fe9bb4).
+//
+// -- FORMAT --------------------------------------------------------------------
+//   Header (32B):
+//     Magic=0x454D5400  Version=1  Pad  EntityCount  OffA  OffB  OffC  Pad2
+//   Section A Prolog (0x20 .. OffC):
+//     158 variable Records: type(u16) + size(u16) + payload
+//       type2 (32B): X/Y/Z (fp/65536) + float Y + sin/cos heading = WorldPos
+//       type9 (36B): AI/LOD ; type5/11 (12B): misc
+//   Section C (OffC):
+//     LevelLoopFrames(u32) + EntityOffsets(u32[EntityCount+1])
+//     EntityDataBase = OffC + 4 + (EntityCount+1)*4
+//     Entity[i] @ EntityDataBase + EntityOffsets[i]:
+//       RuntimePtr(u32) + int16[3][BoneCount] SNORM16 Bone-Quaternionen
+//       BoneCount = (EntityOffsets[i+1]-EntityOffsets[i]-4)/6
+//       EMT bone[N] -> SKL BoneNames[N] (1:1)
+//   Section B (OffB):
+//     SkelCount(u32) + BRecordPtrs(u32[SkelCount])
+//     B-record: [+0] RuntimeID(u32) [+4] LEKSPtr(u32 abs)
+//     LEKS-Block @ LEKSPtr: Tag='LEKS'(0x534B454C) BoneDataPtr(u32) NextLEKSPtr(u32)
+//                           BoneCount(u32) Pad(u32)
+//     BoneData @ BoneDataPtr: count(u16) + int16[3][count] SNORM16
+//   B-Extra: N x 12B: EntityRef(u32)+TickRef(u32)+Config(u32)
+//   Section A Table (OffA): Count(u32) + Count x 20B
+//------------------------------------------------
+
+LittleEndian();
+OutputPaneClear();
+
+// -- Globals -------------------------------------------------------------------
+local uint32 g_eBase  = 0;   // EntityDataBase
+local uint32 g_eIdx   = 0;
+local uint32 g_eBones = 0;
+local uint32 g_lIdx   = 0;
+local uint32 g_brPtr  = 0;
+local uint32 g_leksP  = 0;
+local uint32 g_bdPtr  = 0;
+local uint32 g_bCount = 0;
+local int    i;
+
+// -- Typedefs ------------------------------------------------------------------
+typedef struct {
+    uint32 Magic <format=hex>;
+    uint32 Version;
+    uint32 Pad;
+    uint32 EntityCount;
+    uint32 OffA  <format=hex>;
+    uint32 OffB  <format=hex>;
+    uint32 OffC  <format=hex>;
+    uint32 Pad2;
+} EMT_HEADER <read=ReadHdr>;
+string ReadHdr(EMT_HEADER& h) {
+    string s;
+    SPrintf(s, "EMT v%d  entities=%d  OffC=0x%X  OffB=0x%X  OffA=0x%X",
+            h.Version, h.EntityCount, h.OffC, h.OffB, h.OffA);
+    return s;
+}
+
+typedef struct {
+    float X; float Y; float Z; float Unk;
+    float Yf; float SinH; float CosH; float Pad;
+} A_TYPE2 <read=ReadA2>;
+string ReadA2(A_TYPE2& p) {
+    string s;
+    SPrintf(s, "pos=(%.1f,%.1f,%.1f) hdg=(%.3f,%.3f)", p.X,p.Y,p.Z,p.SinH,p.CosH);
+    return s;
+}
+
+typedef struct {
+    char   Tag[4];                 // 'LEKS'
+    uint32 BoneDataPtr <format=hex>;
+    uint32 NextLEKSPtr <format=hex>;
+    uint32 BoneCount;
+    uint32 Pad;
+} LEKS_HDR <read=ReadLeks>;
+string ReadLeks(LEKS_HDR& l) {
+    string s;
+    SPrintf(s, "LEKS bones=%d  data=0x%X", l.BoneCount, l.BoneDataPtr);
+    return s;
+}
+
+// -- Parse ---------------------------------------------------------------------
+FSeek(0);
+EMT_HEADER Header;
+
+// Section C: EntityOffsets
+FSeek(Header.OffC);
+uint32 LevelLoopFrames;
+uint32 EntityOffsets[Header.EntityCount + 1];
+g_eBase = Header.OffC + 4 + (Header.EntityCount + 1) * 4;
+
+// Entities: RuntimePtr + SNORM16 bone quats (int16[3] je Bone)
+for (i = 0; i < (int)Header.EntityCount; i++) {
+    g_eBones = (EntityOffsets[i+1] - EntityOffsets[i] - 4) / 6;
+    FSeek(g_eBase + EntityOffsets[i]);
+    uint32 RuntimePtr <format=hex>;
+    if (g_eBones > 0 && g_eBones < 256)
+        int16 BoneQuats[g_eBones * 3];
+}
+
+// Section B: SkelCount + BRecordPtrs
+FSeek(Header.OffB);
+uint32 SkelCount;
+uint32 BRecordPtrs[SkelCount] <format=hex>;
+
+// LEKS-Bloecke ueber Loop (BoneDataPtr + SNORM16 quats)
+for (i = 0; i < (int)SkelCount; i++) {
+    g_brPtr = BRecordPtrs[i];
+    g_leksP = ReadUInt(g_brPtr + 4);     // LEKSPtr
+    FSeek(g_leksP);
+    LEKS_HDR LeksHdr;
+    g_bCount = LeksHdr.BoneCount;
+    g_bdPtr  = LeksHdr.BoneDataPtr;
+    FSeek(g_bdPtr);
+    uint16 BDCount;                      // = BoneCount
+    if (g_bCount > 0 && g_bCount < 256)
+        int16 BoneQuats[g_bCount * 3];   // SNORM16 XYZ je Bone
+}
+
+// Section A Prolog (variable Records) - hier nur Start markiert
+FSeek(0x20);
+// (Prolog-Records type/size/payload bei Bedarf hier parsen)
+
+// Section A Table
+FSeek(Header.OffA);
+uint32 ATableCount;
